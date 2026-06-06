@@ -1,0 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f1f5f9; /* Professional Polish Slate-100 fallback */
+}
+
+/* Professional Polish Design classes */
+.stat-card {
+  background: white;
+  border-left: 4px solid;
+}
+
+.sidebar-active {
+  background: rgba(255,255,255,0.1);
+  border-right: 3px solid #10b981;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+/* Print page sizing rules for Audit Reports formatting */
+@media print {
+  body {
+    background-color: #ffffff !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .printable-report-sheet {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+}

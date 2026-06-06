@@ -1,0 +1,502 @@
+{
+  "users": [
+    {
+      "id": "u1",
+      "name": "Lalithesh N",
+      "email": "lalithesh@lvconstructions.com",
+      "role": "Admin",
+      "password": "admin123",
+      "username": "lalithesh"
+    },
+    {
+      "id": "u2",
+      "name": "Varun Kashyap",
+      "email": "varun@lvconstructions.com",
+      "role": "Proprietor",
+      "password": "varun123",
+      "username": "varun"
+    },
+    {
+      "id": "u3",
+      "name": "Nagaraj S",
+      "email": "nagaraj@lvconstructions.com",
+      "role": "Mestri",
+      "password": "nagaraj123",
+      "username": "nagaraj"
+    }
+  ],
+  "projects": [
+    {
+      "id": "p_jqkdjdsr4",
+      "projectName": "PILLAHALLI RAJIV-GANDI",
+      "siteName": "PILLAHALLI -DASANAPURA (APMC)",
+      "clientName": "HABITAT",
+      "startDate": "2026-05-25",
+      "expectedEndDate": "2026-07-25",
+      "totalBudget": 2800000,
+      "status": "Active",
+      "isDeleted": false
+    }
+  ],
+  "advances": [],
+  "purchases": [
+    {
+      "id": "m_j3i575qbu",
+      "projectId": "p_jqkdjdsr4",
+      "date": "2026-06-05",
+      "category": "Cement",
+      "materialName": "PRIYA Cement",
+      "quantity": 50,
+      "unit": "Bags",
+      "supplier": "Local Store",
+      "rate": 330,
+      "totalAmount": 16500,
+      "invoiceNo": "",
+      "billUrl": "",
+      "enteredBy": "Vikram Chauhan",
+      "isDeleted": false
+    },
+    {
+      "id": "m_ubn3bliii",
+      "projectId": "p_jqkdjdsr4",
+      "date": "2026-06-05",
+      "category": "Jelly",
+      "materialName": "40 MM",
+      "quantity": 240,
+      "unit": "ft",
+      "supplier": "Local Store",
+      "rate": 55,
+      "totalAmount": 13200,
+      "invoiceNo": "",
+      "billUrl": "",
+      "enteredBy": "Vikram Chauhan",
+      "isDeleted": false
+    },
+    {
+      "id": "m_m8xyyy69l",
+      "projectId": "p_jqkdjdsr4",
+      "date": "2026-06-05",
+      "category": "Steel",
+      "materialName": "10 mm & 8mm",
+      "quantity": 3,
+      "unit": "Tons",
+      "supplier": "Local Store",
+      "rate": 52000,
+      "totalAmount": 156000,
+      "invoiceNo": "",
+      "billUrl": "",
+      "enteredBy": "Vikram Chauhan",
+      "isDeleted": false
+    },
+    {
+      "id": "m_iausvqmmv",
+      "projectId": "p_jqkdjdsr4",
+      "date": "2026-06-05",
+      "category": "Sand",
+      "materialName": "M-SAND",
+      "quantity": 35,
+      "unit": "Tons",
+      "supplier": "Local Store",
+      "rate": 740,
+      "totalAmount": 25900,
+      "invoiceNo": "",
+      "billUrl": "",
+      "enteredBy": "Vikram Chauhan",
+      "isDeleted": false
+    }
+  ],
+  "laborExpenses": [
+    {
+      "id": "lab_zfv6387wb",
+      "projectId": "p_jqkdjdsr4",
+      "date": "2026-05-25",
+      "workerType": "Mason",
+      "numWorkers": 1,
+      "dailyWage": 22000,
+      "totalWage": 22000,
+      "remarks": "JCB Excavation Completed in side \n",
+      "enteredBy": "Vikram Chauhan"
+    },
+    {
+      "id": "lab_shc8020z9",
+      "projectId": "p_jqkdjdsr4",
+      "date": "2026-06-05",
+      "workerType": "Mason",
+      "numWorkers": 4,
+      "dailyWage": 2500,
+      "totalWage": 10000,
+      "remarks": "Steel Structure Beding Completed ",
+      "enteredBy": "Vikram Chauhan"
+    },
+    {
+      "id": "lab_xah56t3ak",
+      "projectId": "p_jqkdjdsr4",
+      "date": "2026-06-05",
+      "workerType": "Mason",
+      "numWorkers": 13,
+      "dailyWage": 1000,
+      "totalWage": 13000,
+      "remarks": "Bedding Concreat Completed",
+      "enteredBy": "Vikram Chauhan"
+    },
+    {
+      "id": "lab_p0nx9xtqa",
+      "projectId": "p_jqkdjdsr4",
+      "date": "2026-05-25",
+      "workerType": "Helper",
+      "numWorkers": 3,
+      "dailyWage": 500,
+      "totalWage": 1500,
+      "remarks": "Excavation Day\n",
+      "enteredBy": "Vikram Chauhan"
+    },
+    {
+      "id": "lab_1i5dl6mje",
+      "projectId": "p_jqkdjdsr4",
+      "date": "2026-06-05",
+      "workerType": "Mason",
+      "numWorkers": 4,
+      "dailyWage": 1100,
+      "totalWage": 4400,
+      "remarks": "RAJU MARKING DAYS AND LABOUR",
+      "enteredBy": "Vikram Chauhan"
+    },
+    {
+      "id": "lab_wh9g8j193",
+      "projectId": "p_jqkdjdsr4",
+      "date": "2026-06-05",
+      "workerType": "Helper",
+      "numWorkers": 2,
+      "dailyWage": 500,
+      "totalWage": 1000,
+      "remarks": "after Excavation ",
+      "enteredBy": "Vikram Chauhan"
+    },
+    {
+      "id": "lab_gm37lc2h7",
+      "projectId": "p_jqkdjdsr4",
+      "date": "2026-05-31",
+      "workerType": "Mason",
+      "numWorkers": 8,
+      "dailyWage": 1000,
+      "totalWage": 8000,
+      "remarks": "Muddy Helper near PIT Excavation Manual Work \n",
+      "enteredBy": "Vikram Chauhan"
+    },
+    {
+      "id": "lab_sa9z5ceux",
+      "projectId": "p_jqkdjdsr4",
+      "date": "2026-05-31",
+      "workerType": "Mason",
+      "numWorkers": 4,
+      "dailyWage": 1000,
+      "totalWage": 4000,
+      "remarks": "Gaare Mestri And 3 helpers @ Bedding Day",
+      "enteredBy": "Vikram Chauhan"
+    }
+  ],
+  "dailyExpenses": [
+    {
+      "id": "d_2mfvkq0pp",
+      "projectId": "p_jqkdjdsr4",
+      "date": "2026-05-25",
+      "category": "Food",
+      "description": "JCB DRIVER FOOD ",
+      "amount": 200,
+      "billUrl": "",
+      "enteredBy": "Vikram Chauhan"
+    },
+    {
+      "id": "d_j4gv3mtoe",
+      "projectId": "p_jqkdjdsr4",
+      "date": "2026-05-27",
+      "category": "Equipment Rental",
+      "description": "STEEL MESH CUTTING LABOUR ",
+      "amount": 500,
+      "billUrl": "",
+      "enteredBy": "Vikram Chauhan"
+    },
+    {
+      "id": "d_5rky82pws",
+      "projectId": "p_jqkdjdsr4",
+      "date": "2026-06-05",
+      "category": "Food",
+      "description": "Food For Labours @ Bedding Concreat",
+      "amount": 1300,
+      "billUrl": "",
+      "enteredBy": "Vikram Chauhan"
+    },
+    {
+      "id": "d_nb0wnskab",
+      "projectId": "p_jqkdjdsr4",
+      "date": "2026-05-31",
+      "category": "Water",
+      "description": "Water Tanker For Concreat ",
+      "amount": 1500,
+      "billUrl": "",
+      "enteredBy": "Vikram Chauhan"
+    },
+    {
+      "id": "d_bnjilpga9",
+      "projectId": "p_jqkdjdsr4",
+      "date": "2026-05-31",
+      "category": "Equipment Rental",
+      "description": "Curing Pipe (100ft)",
+      "amount": 900,
+      "billUrl": "",
+      "enteredBy": "Vikram Chauhan"
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": "audit_vbm8f5i5b",
+      "action": "Daily Expense Recorded",
+      "tableAffected": "daily_expenses",
+      "recordId": "d_bnjilpga9",
+      "previousValue": "",
+      "newValue": "{\"id\":\"d_bnjilpga9\",\"projectId\":\"p_jqkdjdsr4\",\"date\":\"2026-05-31\",\"category\":\"Equipment Rental\",\"description\":\"Curing Pipe (100ft)\",\"amount\":900,\"billUrl\":\"\",\"enteredBy\":\"Vikram Chauhan\"}",
+      "date": "2026-06-05T10:18:00.983Z",
+      "userId": "u1",
+      "userName": "Vikram Chauhan"
+    },
+    {
+      "id": "audit_apos8dwxd",
+      "action": "Daily Expense Recorded",
+      "tableAffected": "daily_expenses",
+      "recordId": "d_nb0wnskab",
+      "previousValue": "",
+      "newValue": "{\"id\":\"d_nb0wnskab\",\"projectId\":\"p_jqkdjdsr4\",\"date\":\"2026-05-31\",\"category\":\"Water\",\"description\":\"Water Tanker For Concreat \",\"amount\":1500,\"billUrl\":\"\",\"enteredBy\":\"Vikram Chauhan\"}",
+      "date": "2026-06-05T10:17:20.836Z",
+      "userId": "u1",
+      "userName": "Vikram Chauhan"
+    },
+    {
+      "id": "audit_nl9irj3hh",
+      "action": "Daily Expense Recorded",
+      "tableAffected": "daily_expenses",
+      "recordId": "d_5rky82pws",
+      "previousValue": "",
+      "newValue": "{\"id\":\"d_5rky82pws\",\"projectId\":\"p_jqkdjdsr4\",\"date\":\"2026-06-05\",\"category\":\"Food\",\"description\":\"Food For Labours @ Bedding Concreat\",\"amount\":1300,\"billUrl\":\"\",\"enteredBy\":\"Vikram Chauhan\"}",
+      "date": "2026-06-05T10:16:45.313Z",
+      "userId": "u1",
+      "userName": "Vikram Chauhan"
+    },
+    {
+      "id": "audit_buo9oe3fo",
+      "action": "Daily Expense Recorded",
+      "tableAffected": "daily_expenses",
+      "recordId": "d_j4gv3mtoe",
+      "previousValue": "",
+      "newValue": "{\"id\":\"d_j4gv3mtoe\",\"projectId\":\"p_jqkdjdsr4\",\"date\":\"2026-05-27\",\"category\":\"Equipment Rental\",\"description\":\"STEEL MESH CUTTING LABOUR \",\"amount\":500,\"billUrl\":\"\",\"enteredBy\":\"Vikram Chauhan\"}",
+      "date": "2026-06-05T10:15:27.553Z",
+      "userId": "u1",
+      "userName": "Vikram Chauhan"
+    },
+    {
+      "id": "audit_5s20dhbbx",
+      "action": "Daily Expense Recorded",
+      "tableAffected": "daily_expenses",
+      "recordId": "d_2mfvkq0pp",
+      "previousValue": "",
+      "newValue": "{\"id\":\"d_2mfvkq0pp\",\"projectId\":\"p_jqkdjdsr4\",\"date\":\"2026-05-25\",\"category\":\"Food\",\"description\":\"JCB DRIVER FOOD \",\"amount\":200,\"billUrl\":\"\",\"enteredBy\":\"Vikram Chauhan\"}",
+      "date": "2026-06-05T10:14:53.675Z",
+      "userId": "u1",
+      "userName": "Vikram Chauhan"
+    },
+    {
+      "id": "audit_hzw0qybmr",
+      "action": "Labor Expense Recorded",
+      "tableAffected": "labor_expenses",
+      "recordId": "lab_sa9z5ceux",
+      "previousValue": "",
+      "newValue": "{\"id\":\"lab_sa9z5ceux\",\"projectId\":\"p_jqkdjdsr4\",\"date\":\"2026-05-31\",\"workerType\":\"Mason\",\"numWorkers\":4,\"dailyWage\":1000,\"totalWage\":4000,\"remarks\":\"Gaare Mestri And 3 helpers @ Bedding Day\",\"enteredBy\":\"Vikram Chauhan\"}",
+      "date": "2026-06-05T10:13:31.084Z",
+      "userId": "u1",
+      "userName": "Vikram Chauhan"
+    },
+    {
+      "id": "audit_8fm12q9n8",
+      "action": "Labor Expense Recorded",
+      "tableAffected": "labor_expenses",
+      "recordId": "lab_gm37lc2h7",
+      "previousValue": "",
+      "newValue": "{\"id\":\"lab_gm37lc2h7\",\"projectId\":\"p_jqkdjdsr4\",\"date\":\"2026-05-31\",\"workerType\":\"Mason\",\"numWorkers\":8,\"dailyWage\":1000,\"totalWage\":8000,\"remarks\":\"Muddy Helper near PIT Excavation Manual Work \\n\",\"enteredBy\":\"Vikram Chauhan\"}",
+      "date": "2026-06-05T10:12:43.299Z",
+      "userId": "u1",
+      "userName": "Vikram Chauhan"
+    },
+    {
+      "id": "audit_6jez6fu6r",
+      "action": "Labor Expense Recorded",
+      "tableAffected": "labor_expenses",
+      "recordId": "lab_wh9g8j193",
+      "previousValue": "",
+      "newValue": "{\"id\":\"lab_wh9g8j193\",\"projectId\":\"p_jqkdjdsr4\",\"date\":\"2026-06-05\",\"workerType\":\"Helper\",\"numWorkers\":2,\"dailyWage\":500,\"totalWage\":1000,\"remarks\":\"after Excavation \",\"enteredBy\":\"Vikram Chauhan\"}",
+      "date": "2026-06-05T10:11:37.875Z",
+      "userId": "u1",
+      "userName": "Vikram Chauhan"
+    },
+    {
+      "id": "audit_lrypcfzuv",
+      "action": "Labor Expense Recorded",
+      "tableAffected": "labor_expenses",
+      "recordId": "lab_1i5dl6mje",
+      "previousValue": "",
+      "newValue": "{\"id\":\"lab_1i5dl6mje\",\"projectId\":\"p_jqkdjdsr4\",\"date\":\"2026-06-05\",\"workerType\":\"Mason\",\"numWorkers\":4,\"dailyWage\":1100,\"totalWage\":4400,\"remarks\":\"RAJU MARKING DAYS AND LABOUR\",\"enteredBy\":\"Vikram Chauhan\"}",
+      "date": "2026-06-05T10:10:55.019Z",
+      "userId": "u1",
+      "userName": "Vikram Chauhan"
+    },
+    {
+      "id": "audit_kuqdpzzwy",
+      "action": "Labor Expense Recorded",
+      "tableAffected": "labor_expenses",
+      "recordId": "lab_p0nx9xtqa",
+      "previousValue": "",
+      "newValue": "{\"id\":\"lab_p0nx9xtqa\",\"projectId\":\"p_jqkdjdsr4\",\"date\":\"2026-05-25\",\"workerType\":\"Helper\",\"numWorkers\":3,\"dailyWage\":500,\"totalWage\":1500,\"remarks\":\"Excavation Day\\n\",\"enteredBy\":\"Vikram Chauhan\"}",
+      "date": "2026-06-05T10:09:00.872Z",
+      "userId": "u1",
+      "userName": "Vikram Chauhan"
+    },
+    {
+      "id": "audit_w0tetvm0l",
+      "action": "Labor Expense Recorded",
+      "tableAffected": "labor_expenses",
+      "recordId": "lab_xah56t3ak",
+      "previousValue": "",
+      "newValue": "{\"id\":\"lab_xah56t3ak\",\"projectId\":\"p_jqkdjdsr4\",\"date\":\"2026-06-05\",\"workerType\":\"Mason\",\"numWorkers\":13,\"dailyWage\":1000,\"totalWage\":13000,\"remarks\":\"Bedding Concreat Completed\",\"enteredBy\":\"Vikram Chauhan\"}",
+      "date": "2026-06-05T10:06:36.989Z",
+      "userId": "u1",
+      "userName": "Vikram Chauhan"
+    },
+    {
+      "id": "audit_kbbe8pgx4",
+      "action": "Labor Expense Recorded",
+      "tableAffected": "labor_expenses",
+      "recordId": "lab_shc8020z9",
+      "previousValue": "",
+      "newValue": "{\"id\":\"lab_shc8020z9\",\"projectId\":\"p_jqkdjdsr4\",\"date\":\"2026-06-05\",\"workerType\":\"Mason\",\"numWorkers\":4,\"dailyWage\":2500,\"totalWage\":10000,\"remarks\":\"Steel Structure Beding Completed \",\"enteredBy\":\"Vikram Chauhan\"}",
+      "date": "2026-06-05T10:05:58.018Z",
+      "userId": "u1",
+      "userName": "Vikram Chauhan"
+    },
+    {
+      "id": "audit_468dze9ve",
+      "action": "Labor Expense Recorded",
+      "tableAffected": "labor_expenses",
+      "recordId": "lab_zfv6387wb",
+      "previousValue": "",
+      "newValue": "{\"id\":\"lab_zfv6387wb\",\"projectId\":\"p_jqkdjdsr4\",\"date\":\"2026-05-25\",\"workerType\":\"Mason\",\"numWorkers\":1,\"dailyWage\":22000,\"totalWage\":22000,\"remarks\":\"JCB Excavation Completed in side \\n\",\"enteredBy\":\"Vikram Chauhan\"}",
+      "date": "2026-06-05T10:04:44.159Z",
+      "userId": "u1",
+      "userName": "Vikram Chauhan"
+    },
+    {
+      "id": "audit_fc4lzrv85",
+      "action": "Material Purchase Recorded",
+      "tableAffected": "material_purchases",
+      "recordId": "m_iausvqmmv",
+      "previousValue": "",
+      "newValue": "{\"id\":\"m_iausvqmmv\",\"projectId\":\"p_jqkdjdsr4\",\"date\":\"2026-06-05\",\"category\":\"Sand\",\"materialName\":\"M-SAND\",\"quantity\":35,\"unit\":\"Tons\",\"supplier\":\"Local Store\",\"rate\":740,\"totalAmount\":25900,\"invoiceNo\":\"\",\"billUrl\":\"\",\"enteredBy\":\"Vikram Chauhan\",\"isDeleted\":false}",
+      "date": "2026-06-05T09:58:45.643Z",
+      "userId": "u1",
+      "userName": "Vikram Chauhan"
+    },
+    {
+      "id": "audit_4rrkgwxwh",
+      "action": "Material Purchase Recorded",
+      "tableAffected": "material_purchases",
+      "recordId": "m_m8xyyy69l",
+      "previousValue": "",
+      "newValue": "{\"id\":\"m_m8xyyy69l\",\"projectId\":\"p_jqkdjdsr4\",\"date\":\"2026-06-05\",\"category\":\"Steel\",\"materialName\":\"10 mm & 8mm\",\"quantity\":3,\"unit\":\"Tons\",\"supplier\":\"Local Store\",\"rate\":52000,\"totalAmount\":156000,\"invoiceNo\":\"\",\"billUrl\":\"\",\"enteredBy\":\"Vikram Chauhan\",\"isDeleted\":false}",
+      "date": "2026-06-05T09:56:40.975Z",
+      "userId": "u1",
+      "userName": "Vikram Chauhan"
+    },
+    {
+      "id": "audit_tpirv8ch0",
+      "action": "Material Purchase Recorded",
+      "tableAffected": "material_purchases",
+      "recordId": "m_ubn3bliii",
+      "previousValue": "",
+      "newValue": "{\"id\":\"m_ubn3bliii\",\"projectId\":\"p_jqkdjdsr4\",\"date\":\"2026-06-05\",\"category\":\"Jelly\",\"materialName\":\"40 MM\",\"quantity\":240,\"unit\":\"ft\",\"supplier\":\"Local Store\",\"rate\":55,\"totalAmount\":13200,\"invoiceNo\":\"\",\"billUrl\":\"\",\"enteredBy\":\"Vikram Chauhan\",\"isDeleted\":false}",
+      "date": "2026-06-05T09:55:08.167Z",
+      "userId": "u1",
+      "userName": "Vikram Chauhan"
+    },
+    {
+      "id": "audit_gdq4d7wag",
+      "action": "Material Purchase Recorded",
+      "tableAffected": "material_purchases",
+      "recordId": "m_j3i575qbu",
+      "previousValue": "",
+      "newValue": "{\"id\":\"m_j3i575qbu\",\"projectId\":\"p_jqkdjdsr4\",\"date\":\"2026-06-05\",\"category\":\"Cement\",\"materialName\":\"PRIYA Cement\",\"quantity\":50,\"unit\":\"Bags\",\"supplier\":\"Local Store\",\"rate\":330,\"totalAmount\":16500,\"invoiceNo\":\"\",\"billUrl\":\"\",\"enteredBy\":\"Vikram Chauhan\",\"isDeleted\":false}",
+      "date": "2026-06-05T09:52:12.691Z",
+      "userId": "u1",
+      "userName": "Vikram Chauhan"
+    },
+    {
+      "id": "audit_awtt437vs",
+      "action": "Create Project",
+      "tableAffected": "projects",
+      "recordId": "p_jqkdjdsr4",
+      "previousValue": "",
+      "newValue": "{\"id\":\"p_jqkdjdsr4\",\"projectName\":\"PILLAHALLI RAJIV-GANDI\",\"siteName\":\"PILLAHALLI -DASANAPURA (APMC)\",\"clientName\":\"HABITAT\",\"startDate\":\"2026-05-25\",\"expectedEndDate\":\"2026-07-25\",\"totalBudget\":2800000,\"status\":\"Active\",\"isDeleted\":false}",
+      "date": "2026-06-05T09:50:23.375Z",
+      "userId": "u1",
+      "userName": "Vikram Chauhan"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "notif_1k0dg7jlp",
+      "projectId": "p_jqkdjdsr4",
+      "projectName": "PILLAHALLI RAJIV-GANDI",
+      "message": "🧱 NEW MATERIAL PURCHASE: Vikram Chauhan recorded purchase of M-SAND (Sand) for ₹25,900 from Local Store.",
+      "type": "purchase_recorded",
+      "date": "2026-06-05T09:58:45.643Z",
+      "amount": 25900,
+      "isReadBy": []
+    },
+    {
+      "id": "notif_9xqa1k75h",
+      "projectId": "p_jqkdjdsr4",
+      "projectName": "PILLAHALLI RAJIV-GANDI",
+      "message": "⚡ LARGE EXPENSE ALERT: Purchase of \"10 mm & 8mm\" is for ₹156,000, exceeding the ₹50,000 threshold.",
+      "type": "large_expense",
+      "date": "2026-06-05T09:56:40.975Z",
+      "amount": 156000,
+      "isReadBy": []
+    },
+    {
+      "id": "notif_tyjltm9pk",
+      "projectId": "p_jqkdjdsr4",
+      "projectName": "PILLAHALLI RAJIV-GANDI",
+      "message": "🧱 NEW MATERIAL PURCHASE: Vikram Chauhan recorded purchase of 10 mm & 8mm (Steel) for ₹156,000 from Local Store.",
+      "type": "purchase_recorded",
+      "date": "2026-06-05T09:56:40.975Z",
+      "amount": 156000,
+      "isReadBy": []
+    },
+    {
+      "id": "notif_9w6vi8jtn",
+      "projectId": "p_jqkdjdsr4",
+      "projectName": "PILLAHALLI RAJIV-GANDI",
+      "message": "🧱 NEW MATERIAL PURCHASE: Vikram Chauhan recorded purchase of 40 MM (Jelly) for ₹13,200 from Local Store.",
+      "type": "purchase_recorded",
+      "date": "2026-06-05T09:55:08.167Z",
+      "amount": 13200,
+      "isReadBy": []
+    },
+    {
+      "id": "notif_kl5qum7v4",
+      "projectId": "p_jqkdjdsr4",
+      "projectName": "PILLAHALLI RAJIV-GANDI",
+      "message": "🧱 NEW MATERIAL PURCHASE: Vikram Chauhan recorded purchase of PRIYA Cement (Cement) for ₹16,500 from Local Store.",
+      "type": "purchase_recorded",
+      "date": "2026-06-05T09:52:12.708Z",
+      "amount": 16500,
+      "isReadBy": []
+    }
+  ]
+}
