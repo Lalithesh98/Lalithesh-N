@@ -75,5 +75,30 @@ export const appApi = {
   markNotificationsRead: async (userId: string) => {
     return apiCall<{ status: string }>('/api/notifications/read', 'POST', { userId });
   },
+
+  // Import / restore DB state
+  importDatabase: async (dbData: any) => {
+    return apiCall<{ status: string; message: string }>('/api/database/import', 'POST', dbData);
+  },
+
+  // Explicitly pull database state from cloud backup
+  pullDatabaseFromCloud: async () => {
+    return apiCall<{ status: string; message: string }>('/api/database/pull', 'POST');
+  },
+
+  // Explicitly push database state to cloud backup
+  pushDatabaseToCloud: async () => {
+    return apiCall<{ status: string; message: string }>('/api/database/push', 'POST');
+  },
+
+  // Update a user password
+  updateUserPassword: async (userId: string, newPassword: string, adminUserId: string, adminUserName: string) => {
+    return apiCall<{ status: string; message: string; users: any[] }>('/api/users/update-password', 'POST', {
+      userId,
+      newPassword,
+      adminUserId,
+      adminUserName,
+    });
+  },
 };
 export default appApi;

@@ -18,7 +18,8 @@ import {
   LaborExpense, 
   DailyExpense, 
   MaterialCategory,
-  UserRole
+  UserRole,
+  PaymentStatus
 } from '../types';
 
 interface DashboardProps {
@@ -74,9 +75,27 @@ export default function Dashboard({
   const totalLaborCost = projectLabor.reduce((sum, l) => sum + l.totalWage, 0);
   const totalSiteExpense = projectDaily.reduce((sum, d) => sum + d.amount, 0);
 
+  // Paid and In Credit breakdowns for budget tallying
+  const paidMaterialCost = projectPurchases.reduce((sum, m) => {
+    if (m.paidAmount !== undefined) return sum + m.paidAmount;
+    return sum + (m.paymentStatus !== PaymentStatus.CREDIT ? m.totalAmount : 0);
+  }, 0);
+  const paidLaborCost = projectLabor.filter(l => l.paymentStatus !== PaymentStatus.CREDIT).reduce((sum, l) => sum + l.totalWage, 0);
+  const paidSiteExpense = projectDaily.filter(d => d.paymentStatus !== PaymentStatus.CREDIT).reduce((sum, d) => sum + d.amount, 0);
+
+  const creditMaterialCost = projectPurchases.reduce((sum, m) => {
+    if (m.creditAmount !== undefined) return sum + m.creditAmount;
+    return sum + (m.paymentStatus === PaymentStatus.CREDIT ? m.totalAmount : 0);
+  }, 0);
+  const creditLaborCost = projectLabor.filter(l => l.paymentStatus === PaymentStatus.CREDIT).reduce((sum, l) => sum + l.totalWage, 0);
+  const creditSiteExpense = projectDaily.filter(d => d.paymentStatus === PaymentStatus.CREDIT).reduce((sum, d) => sum + d.amount, 0);
+
   const totalSpent = totalMaterialCost + totalLaborCost + totalSiteExpense;
+  const totalSpentPaid = paidMaterialCost + paidLaborCost + paidSiteExpense;
+  const totalSpentCredit = creditMaterialCost + creditLaborCost + creditSiteExpense;
+
   const remainingBudget = totalBudget - totalSpent;
-  const remainingAdvance = totalAdvances - totalSpent;
+  const remainingAdvance = totalAdvances - totalSpentPaid; // Outstanding in-credit sheets do not spend active cash advance!
 
   // Percentage trackers
   const budgetUtilization = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
@@ -248,7 +267,13 @@ export default function Dashboard({
               <Layers className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-1.5">
+
+          <div className="mt-2 text-[10px] bg-slate-50 border border-slate-100 p-2 rounded-xl flex items-center justify-between font-bold">
+            <span className="text-emerald-700">💰 Paid: ₹{totalSpentPaid.toLocaleString('en-IN')}</span>
+            <span className="text-rose-700">💳 Credit: ₹{totalSpentCredit.toLocaleString('en-IN')}</span>
+          </div>
+
+          <div className="mt-2 pt-2 border-t border-slate-100 flex flex-col gap-1.5">
             <div className="flex justify-between text-xs font-semibold">
               <span className="text-slate-400">Budget Spent</span>
               <span className="text-slate-700 font-bold">{budgetUtilization.toFixed(1)}%</span>
@@ -293,6 +318,9 @@ export default function Dashboard({
           <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Mestri Workspace Reconciliation</h4>
           <p className="text-xs text-slate-500 max-w-xl">
             This compares the sum of advances given to the Site supervisor (₹{totalAdvances.toLocaleString('en-IN')}) against itemized bills recorded on the site (₹{totalSpent.toLocaleString('en-IN')}).
+            <span className="text-emerald-700 font-extrabold block mt-1">
+              💡 Outstanding credit purchases of ₹{totalSpentCredit.toLocaleString('en-IN')} are excluded from cash deductions to keep your actual cash-in-hand accurate!
+            </span>
           </p>
         </div>
         <div className="flex items-center gap-4">

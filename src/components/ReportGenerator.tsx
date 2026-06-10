@@ -79,8 +79,14 @@ export default function ReportGenerator({
   const totalDaily = projectDaily.reduce((sum, d) => sum + d.amount, 0);
   const totalExpenses = totalMaterial + totalLabor + totalDaily;
 
+  const paidMaterial = projectPurchases.filter(m => m.paymentStatus !== 'In Credit').reduce((sum, m) => sum + m.totalAmount, 0);
+  const paidLabor = projectLabor.filter(l => l.paymentStatus !== 'In Credit').reduce((sum, l) => sum + l.totalWage, 0);
+  const paidDaily = projectDaily.filter(d => d.paymentStatus !== 'In Credit').reduce((sum, d) => sum + d.amount, 0);
+  const totalSpentPaid = paidMaterial + paidLabor + paidDaily;
+  const totalSpentCredit = totalExpenses - totalSpentPaid;
+
   const remainingBudget = activeProject.totalBudget - totalExpenses;
-  const remainingAdvance = totalAdvances - totalExpenses;
+  const remainingAdvance = totalAdvances - totalSpentPaid; // Tracks surplus cash of advance after Cash payouts
 
   // Filter criteria options
   const existingSuppliers = Array.from(new Set(projectPurchases.map(p => p.supplier).filter(Boolean)));
@@ -175,8 +181,10 @@ export default function ReportGenerator({
       { label: 'Labor Ledger Worksheets Wages Drawn', value: totalLabor, highlight: true },
       { label: 'Utility Ledger Site Vouchers Drawn', value: totalDaily, highlight: true },
       { label: 'Total site expenses drawn (Materials + Wages + Vouchers)', value: totalExpenses, highlight: false },
-      { label: 'Total Project Budget Reserve Balance', value: remainingBudget, highlight: true },
-      { label: 'Mestri Net Bank Reconciliation Reserve Balance', value: remainingAdvance, highlight: false },
+      { label: 'Total Site Expenses actually Cash-Paid', value: totalSpentPaid, highlight: false },
+      { label: 'Total Site Expenses outstanding In-Credit', value: totalSpentCredit, highlight: false },
+      { label: 'Total Project Budget Reserve Balance (Committed)', value: remainingBudget, highlight: true },
+      { label: 'Mestri Net Bank Cash Reconciliation Reserve Balance', value: remainingAdvance, highlight: false },
     ];
     tableHeaders = ['Monthly Balance Sheets Financial Parameters', 'Sum Aggregations (₹)'];
     csvName = `${activeProject.projectName}_net_summary`;

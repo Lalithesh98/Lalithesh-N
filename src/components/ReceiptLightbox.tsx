@@ -149,6 +149,28 @@ export default function ReceiptLightbox({
 
         {/* Action Triggers footer */}
         <div className="p-4 px-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 rounded-b-3xl">
+          {billUrl && billUrl !== 'mock' && (
+            <button
+              id="download-scanned-bill-btn"
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = billUrl;
+                // Infer file extension if it is a data URL
+                let ext = 'png';
+                if (billUrl.startsWith('data:image/jpeg') || billUrl.startsWith('data:image/jpg')) ext = 'jpg';
+                else if (billUrl.startsWith('data:application/pdf')) ext = 'pdf';
+                else if (billUrl.startsWith('data:image/webp')) ext = 'webp';
+                link.download = `${title.replace(/\s+/g, '_')}_bill.${ext}`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+              className="flex items-center gap-1.5 px-4 md:px-4.5 py-2.5 bg-emerald-55 border border-emerald-250 text-emerald-800 hover:bg-emerald-100 font-bold rounded-xl text-xs transition-all cursor-pointer"
+            >
+              <Download className="w-4 h-4 text-emerald-600" /> Download Scan
+            </button>
+          )}
+
           <button
             id="print-single-bill-btn"
             onClick={() => window.print()}

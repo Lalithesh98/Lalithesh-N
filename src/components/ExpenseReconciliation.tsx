@@ -53,7 +53,18 @@ export default function ExpenseReconciliation({
   const totalDaily = projectDaily.reduce((sum, d) => sum + d.amount, 0);
   const totalExpenses = totalMaterial + totalLabor + totalDaily;
 
-  const remainingBalance = totalAdvances - totalExpenses;
+  // Paid vs In Credit splits
+  const totalMaterialPaid = projectPurchases.filter(m => m.paymentStatus !== 'In Credit').reduce((sum, m) => sum + m.totalAmount, 0);
+  const totalLaborPaid = projectLabor.filter(l => l.paymentStatus !== 'In Credit').reduce((sum, l) => sum + l.totalWage, 0);
+  const totalDailyPaid = projectDaily.filter(d => d.paymentStatus !== 'In Credit').reduce((sum, d) => sum + d.amount, 0);
+  const totalPaidExpenses = totalMaterialPaid + totalLaborPaid + totalDailyPaid;
+
+  const totalMaterialCredit = projectPurchases.filter(m => m.paymentStatus === 'In Credit').reduce((sum, m) => sum + m.totalAmount, 0);
+  const totalLaborCredit = projectLabor.filter(l => l.paymentStatus === 'In Credit').reduce((sum, l) => sum + l.totalWage, 0);
+  const totalDailyCredit = projectDaily.filter(d => d.paymentStatus === 'In Credit').reduce((sum, d) => sum + d.amount, 0);
+  const totalCreditExpenses = totalMaterialCredit + totalLaborCredit + totalDailyCredit;
+
+  const remainingBalance = totalAdvances - totalPaidExpenses; // Tracks actual surplus cash in Mestri hands!
 
   // Audit triggers
   const purchasesWithoutBills = projectPurchases.filter(p => !p.billUrl).length;
@@ -62,7 +73,7 @@ export default function ExpenseReconciliation({
 
   const totalDocumentsAttached = projectPurchases.filter(p => p.billUrl).length + projectDaily.filter(d => d.billUrl).length;
 
-  const excessSpending = totalExpenses > totalAdvances;
+  const excessSpending = totalPaidExpenses > totalAdvances;
 
   return (
     <div id="reconciliation-container" className="space-y-6">
@@ -199,6 +210,7 @@ export default function ExpenseReconciliation({
                     <div>
                       <span className="font-bold text-slate-800 block">Material Expense debit</span>
                       <span className="text-[10px] text-slate-400 font-semibold">Bulk materials including cement, sand, brick and metals</span>
+                      <span className="text-[10px] text-slate-500 block">💰 Paid: ₹{totalMaterialPaid.toLocaleString('en-IN')} | 💳 Credit: ₹{totalMaterialCredit.toLocaleString('en-IN')}</span>
                     </div>
                   </td>
                   <td className="px-5 py-4 text-right text-slate-800 font-bold">
@@ -214,6 +226,7 @@ export default function ExpenseReconciliation({
                     <div>
                       <span className="font-bold text-slate-800 block">Labor wages debit</span>
                       <span className="text-[10px] text-slate-400 font-semibold">Wages drawn for masonry, electrical and on-site helpers</span>
+                      <span className="text-[10px] text-slate-500 block">💰 Paid: ₹{totalLaborPaid.toLocaleString('en-IN')} | 💳 Credit: ₹{totalLaborCredit.toLocaleString('en-IN')}</span>
                     </div>
                   </td>
                   <td className="px-5 py-4 text-right text-slate-800 font-bold">
@@ -229,6 +242,7 @@ export default function ExpenseReconciliation({
                     <div>
                       <span className="font-bold text-slate-800 block">Other site expenses debit</span>
                       <span className="text-[10px] text-slate-400 font-semibold">Operating expenses transport, diesel machinery and curing water</span>
+                      <span className="text-[10px] text-slate-500 block">💰 Paid: ₹{totalDailyPaid.toLocaleString('en-IN')} | 💳 Credit: ₹{totalDailyCredit.toLocaleString('en-IN')}</span>
                     </div>
                   </td>
                   <td className="px-5 py-4 text-right text-slate-800 font-bold">
@@ -241,10 +255,11 @@ export default function ExpenseReconciliation({
                 <tr className="bg-slate-900 text-white">
                   <td className="px-5 py-4">
                     <span className="font-extrabold uppercase text-slate-200 block text-[10px] tracking-wider">Summarized Net Totals</span>
-                    <span className="text-[10px] text-slate-440 font-semibold">Total active operating debits vs received credits</span>
+                    <span className="text-[10px] text-slate-300 block">All Debited: ₹{totalExpenses.toLocaleString('en-IN')} (💰 Paid: ₹{totalPaidExpenses.toLocaleString('en-IN')} | 💳 Credit: ₹{totalCreditExpenses.toLocaleString('en-IN')})</span>
                   </td>
-                  <td className="px-5 py-4 text-right font-black text-rose-300 text-sm">
-                    ₹{totalExpenses.toLocaleString('en-IN')}
+                  <td className="px-5 py-4 text-right font-black text-rose-350 text-sm">
+                    ₹{totalPaidExpenses.toLocaleString('en-IN')}<br/>
+                    <span className="text-[9px] font-semibold text-rose-200">Paid from Cash Adv.</span>
                   </td>
                   <td className="px-5 py-4 text-right font-black text-emerald-400 text-sm">
                     ₹{totalAdvances.toLocaleString('en-IN')}
@@ -254,8 +269,8 @@ export default function ExpenseReconciliation({
                 {/* Balance Line */}
                 <tr className={`${excessSpending ? 'bg-red-50' : 'bg-emerald-50'}`}>
                   <td className="px-5 py-4">
-                    <span className="font-black text-slate-800 uppercase tracking-wide text-[10px] block">Reconciliation Reserve Balance</span>
-                    <span className="text-[10px] text-slate-500">Unspent advanced reserve currently remaining on site</span>
+                    <span className="font-black text-slate-800 uppercase tracking-wide text-[10px] block">Mestri Cash reserve Balance</span>
+                    <span className="text-[10px] text-slate-500 font-bold">Unspent cash advance actualmente remaining with the supervisor (excludes credit liabilities of ₹{totalCreditExpenses.toLocaleString('en-IN')})</span>
                   </td>
                   <td colSpan={2} className={`px-5 py-4 text-right font-black text-base ${
                     excessSpending ? 'text-red-700' : 'text-emerald-800'

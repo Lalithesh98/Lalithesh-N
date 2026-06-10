@@ -1,0 +1,183 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User account configuration",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string" },
+        "password": { "type": "string" },
+        "username": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "role"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "Construction Site Project",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectName": { "type": "string" },
+        "siteName": { "type": "string" },
+        "clientName": { "type": "string" },
+        "startDate": { "type": "string" },
+        "expectedEndDate": { "type": "string" },
+        "totalBudget": { "type": "number" },
+        "status": { "type": "string" },
+        "isDeleted": { "type": "boolean" }
+      },
+      "required": ["id", "projectName", "siteName", "clientName", "totalBudget", "status", "isDeleted"]
+    },
+    "Advance": {
+      "title": "Advance",
+      "description": "Advance fund issued to hand over to site mestri",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "date": { "type": "string" },
+        "givenBy": { "type": "string" },
+        "receivedBy": { "type": "string" },
+        "amount": { "type": "number" },
+        "paymentMode": { "type": "string" },
+        "remarks": { "type": "string" }
+      },
+      "required": ["id", "projectId", "date", "givenBy", "receivedBy", "amount"]
+    },
+    "MaterialPurchase": {
+      "title": "MaterialPurchase",
+      "description": "Material purchases at site (e.g. cement, steel, bricks)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "date": { "type": "string" },
+        "category": { "type": "string" },
+        "materialName": { "type": "string" },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string" },
+        "supplier": { "type": "string" },
+        "rate": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "invoiceNo": { "type": "string" },
+        "billUrl": { "type": "string" },
+        "enteredBy": { "type": "string" },
+        "isDeleted": { "type": "boolean" },
+        "paymentStatus": { "type": "string" },
+        "paidAmount": { "type": "number" },
+        "creditAmount": { "type": "number" },
+        "transportCharges": { "type": "number" },
+        "extraExpenses": { "type": "number" },
+        "extraExpensesRemarks": { "type": "string" }
+      },
+      "required": ["id", "projectId", "date", "category", "materialName", "quantity", "unit", "supplier", "rate", "totalAmount", "enteredBy", "isDeleted"]
+    },
+    "LaborExpense": {
+      "title": "LaborExpense",
+      "description": "Labor wage logs on site",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "date": { "type": "string" },
+        "workerType": { "type": "string" },
+        "numWorkers": { "type": "number" },
+        "dailyWage": { "type": "number" },
+        "totalWage": { "type": "number" },
+        "remarks": { "type": "string" },
+        "enteredBy": { "type": "string" },
+        "paymentStatus": { "type": "string" }
+      },
+      "required": ["id", "projectId", "date", "workerType", "numWorkers", "dailyWage", "totalWage", "enteredBy"]
+    },
+    "DailyExpense": {
+      "title": "DailyExpense",
+      "description": "Daily site miscellaneous operations costs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "date": { "type": "string" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "amount": { "type": "number" },
+        "billUrl": { "type": "string" },
+        "enteredBy": { "type": "string" },
+        "paymentStatus": { "type": "string" }
+      },
+      "required": ["id", "projectId", "date", "category", "description", "amount", "enteredBy"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Logs for state and purchase updates",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "action": { "type": "string" },
+        "tableAffected": { "type": "string" },
+        "recordId": { "type": "string" },
+        "previousValue": { "type": "string" },
+        "newValue": { "type": "string" },
+        "date": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" }
+      },
+      "required": ["id", "action", "tableAffected", "recordId", "date", "userId", "userName"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Live construction business rules triggers and warnings",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "projectName": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string" },
+        "date": { "type": "string" },
+        "amount": { "type": "number" },
+        "isReadBy": {
+          "type": "array"
+        }
+      },
+      "required": ["id", "projectId", "projectName", "message", "type", "date"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": "User",
+      "description": "Collection of platform user accounts & roles"
+    },
+    "projects": {
+      "schema": "Project",
+      "description": "Construction projects and parameters"
+    },
+    "advances": {
+      "schema": "Advance",
+      "description": "Issuance of cash advances/funds to Mestri"
+    },
+    "purchases": {
+      "schema": "MaterialPurchase",
+      "description": "Material purchases ledger entries"
+    },
+    "laborExpenses": {
+      "schema": "LaborExpense",
+      "description": "Labor expense entry records"
+    },
+    "dailyExpenses": {
+      "schema": "DailyExpense",
+      "description": "Daily site petty operational expenses"
+    },
+    "auditLogs": {
+      "schema": "AuditLog",
+      "description": "Administrative changes tracking logs"
+    },
+    "notifications": {
+      "schema": "Notification",
+      "description": "In-app alerts and compliance notifications"
+    }
+  }
+}

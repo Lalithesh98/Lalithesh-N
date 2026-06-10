@@ -2,6 +2,8 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import { 
   UserRole, 
   Project, 
@@ -53,6 +55,65 @@ function initDb() {
   }
 }
 
+let firestoreDb: any = null;
+
+function initFirestore() {
+  try {
+    const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
+    if (fs.existsSync(configPath)) {
+      const firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      const fbApp = initializeApp(firebaseConfig);
+      firestoreDb = getFirestore(fbApp, firebaseConfig.firestoreDatabaseId);
+      console.log('Firebase Firestore successfully initialized inside server.ts with Database ID:', firebaseConfig.firestoreDatabaseId);
+    } else {
+      console.warn('Firebase configuration file not found at: ' + configPath);
+    }
+  } catch (err) {
+    console.error('Failed to initialize Firebase inside server.ts:', err);
+  }
+}
+
+// Function to pull latest state from Firestore and update db.json
+async function syncFromCloudToLocal() {
+  if (!firestoreDb) return null;
+  try {
+    const docRef = doc(firestoreDb, 'system', 'databaseState');
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      if (data && data.state) {
+        const parsed = typeof data.state === 'string' ? JSON.parse(data.state) : data.state;
+        if (parsed.users && parsed.projects) {
+          console.log('Successfully fetched stable state from Firestore Cloud Backup.');
+          fs.writeFileSync(DB_PATH, JSON.stringify(parsed, null, 2), 'utf-8');
+          return parsed;
+        }
+      }
+    } else {
+      console.log('No current active cloud state found in Firestore. Creating initial seed.');
+      await syncFromLocalToCloud(initialData);
+    }
+  } catch (err) {
+    console.error('Error during automatic Cloud sync-down:', err);
+  }
+  return null;
+}
+
+// Function to push local state securely to Firestore
+async function syncFromLocalToCloud(data: any) {
+  if (!firestoreDb) return;
+  try {
+    const docRef = doc(firestoreDb, 'system', 'databaseState');
+    await setDoc(docRef, {
+      state: data,
+      lastSyncedAt: new Date().toISOString()
+    });
+    console.log('Successfully backed up active state to Firestore Cloud Database.');
+  } catch (err) {
+    console.error('Failed to sync state to Firestore cloud backup:', err);
+  }
+}
+
 // Read database
 function readDb() {
   initDb();
@@ -70,6 +131,9 @@ function readDb() {
 function writeDb(data: any) {
   initDb();
   fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
+  syncFromLocalToCloud(data).catch(err => {
+    console.error('Background cloud sync-up warning:', err);
+  });
 }
 
 // Simple Helper to generate IDs
@@ -157,6 +221,97 @@ app.get('/api/health', (req, res) => {
 // GET complete database
 app.get('/api/data', (req, res) => {
   res.json(readDb());
+});
+
+// Export entire database as a downloaded JSON file
+app.get('/api/database/export', (req, res) => {
+  try {
+    const dbData = readDb();
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', 'attachment; filename=lv_constructions_db.json');
+    res.send(JSON.stringify(dbData, null, 2));
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to export database: ' + err.message });
+  }
+});
+
+// Import entire database JSON to restore/sync
+app.post('/api/database/import', (req, res) => {
+  try {
+    const dbData = req.body;
+    if (!dbData || typeof dbData !== 'object') {
+      return res.status(400).json({ error: 'Invalid payload. Data must be a JSON object.' });
+    }
+    if (!Array.isArray(dbData.users) || !Array.isArray(dbData.projects)) {
+      return res.status(400).json({ error: 'Invalid database layout. "users" and "projects" arrays are required.' });
+    }
+    writeDb(dbData);
+    res.json({ status: 'success', message: 'Database successfully imported and synchronized!' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to import/restore database: ' + err.message });
+  }
+});
+
+// Explicitly pull state from cloud Firestore
+app.post('/api/database/pull', async (req, res) => {
+  try {
+    const cloudData = await syncFromCloudToLocal();
+    if (cloudData) {
+      res.json({ status: 'success', message: 'Successfully pulled and restored the latest data from the Cloud Firestore backup.' });
+    } else {
+      res.json({ status: 'success', message: 'No backup found or local is already synchronized.' });
+    }
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to pull cloud backup: ' + err.message });
+  }
+});
+
+// Explicitly push current state to cloud Firestore
+app.post('/api/database/push', async (req, res) => {
+  try {
+    const localData = readDb();
+    await syncFromLocalToCloud(localData);
+    res.json({ status: 'success', message: 'Successfully pushed current local data to the Cloud Firestore backup.' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to push cloud backup: ' + err.message });
+  }
+});
+
+// Update user password and write to sync databases
+app.post('/api/users/update-password', (req, res) => {
+  const { userId, newPassword, adminUserId, adminUserName } = req.body;
+  if (!userId || !newPassword) {
+    return res.status(400).json({ error: 'User ID and new password are required' });
+  }
+
+  const db = readDb();
+  const user = db.users.find((u: any) => u.id === userId);
+  if (!user) {
+    return res.status(404).json({ error: 'User account not found' });
+  }
+
+  const previousPassword = user.password || '******';
+  user.password = newPassword;
+
+  // Append entry in Admin Audit Logs
+  db.auditLogs.unshift({
+    id: genId('audit'),
+    action: `Password Changed for ${user.name} (${user.role})`,
+    tableAffected: 'users',
+    recordId: userId,
+    previousValue: `Password was "${previousPassword}"`,
+    newValue: `Password set to "${newPassword}"`,
+    date: new Date().toISOString(),
+    userId: adminUserId || 'u1',
+    userName: adminUserName || 'Admin',
+  });
+
+  writeDb(db);
+  res.json({ 
+    status: 'success', 
+    message: `Successfully changed password for ${user.name} to "${newPassword}"`,
+    users: db.users 
+  });
 });
 
 // Auth Login Simulation
@@ -343,12 +498,14 @@ app.post('/api/advances', (req, res) => {
 
 // MATERIAL PURCHASES CRUD (with soft delete)
 app.post('/api/purchases', (req, res) => {
-  const { id, projectId, date, category, materialName, quantity, unit, supplier, rate, invoiceNo, billUrl, userId, userName } = req.body;
+  const { id, projectId, date, category, materialName, quantity, unit, supplier, rate, invoiceNo, billUrl, userId, userName, paymentStatus, paidAmount, creditAmount, transportCharges, extraExpenses, extraExpensesRemarks } = req.body;
   const db = readDb();
 
   const qty = Number(quantity) || 0;
   const rateNum = Number(rate) || 0;
-  const totalAmount = qty * rateNum;
+  const transport = Number(transportCharges) || 0;
+  const extra = Number(extraExpenses) || 0;
+  const totalAmount = (qty * rateNum) + transport + extra;
 
   if (!id) {
     const newPurchase: MaterialPurchase = {
@@ -366,6 +523,12 @@ app.post('/api/purchases', (req, res) => {
       billUrl: billUrl || '',
       enteredBy: userName || 'Mestri',
       isDeleted: false,
+      paymentStatus: paymentStatus || undefined,
+      paidAmount: paidAmount !== undefined ? Number(paidAmount) : undefined,
+      creditAmount: creditAmount !== undefined ? Number(creditAmount) : undefined,
+      transportCharges: transport,
+      extraExpenses: extra,
+      extraExpensesRemarks: extraExpensesRemarks || '',
     };
     db.purchases.push(newPurchase);
 
@@ -429,6 +592,12 @@ app.post('/api/purchases', (req, res) => {
       totalAmount,
       invoiceNo: invoiceNo ?? oldPurchase.invoiceNo,
       billUrl: billUrl ?? oldPurchase.billUrl,
+      paymentStatus: paymentStatus ?? oldPurchase.paymentStatus,
+      paidAmount: paidAmount !== undefined ? Number(paidAmount) : oldPurchase.paidAmount,
+      creditAmount: creditAmount !== undefined ? Number(creditAmount) : oldPurchase.creditAmount,
+      transportCharges: transport,
+      extraExpenses: extra,
+      extraExpensesRemarks: extraExpensesRemarks || '',
     };
     db.purchases[idx] = updatedPurchase;
 
@@ -496,7 +665,7 @@ app.post('/api/purchases/:id/delete', (req, res) => {
 
 // LABOR EXPENSE RECORDING
 app.post('/api/labor', (req, res) => {
-  const { projectId, date, workerType, numWorkers, dailyWage, remarks, userId, userName } = req.body;
+  const { projectId, date, workerType, numWorkers, dailyWage, remarks, userId, userName, paymentStatus } = req.body;
   const db = readDb();
 
   const num = Number(numWorkers) || 0;
@@ -513,6 +682,7 @@ app.post('/api/labor', (req, res) => {
     totalWage,
     remarks: remarks || '',
     enteredBy: userName || 'Mestri',
+    paymentStatus: paymentStatus || undefined,
   };
 
   db.laborExpenses.push(newLabor);
@@ -552,7 +722,7 @@ app.post('/api/labor', (req, res) => {
 
 // DAILY EXPENSES RECORDING
 app.post('/api/daily-expenses', (req, res) => {
-  const { projectId, date, category, description, amount, billUrl, userId, userName } = req.body;
+  const { projectId, date, category, description, amount, billUrl, userId, userName, paymentStatus } = req.body;
   const db = readDb();
 
   const amt = Number(amount) || 0;
@@ -566,6 +736,7 @@ app.post('/api/daily-expenses', (req, res) => {
     amount: amt,
     billUrl: billUrl || '',
     enteredBy: userName || 'Mestri',
+    paymentStatus: paymentStatus || undefined,
   };
 
   db.dailyExpenses.push(newDaily);
@@ -620,11 +791,17 @@ app.post('/api/notifications/read', (req, res) => {
 
 // Serve Vite dev server or frontend build bundle
 async function startServer() {
-  // Initialize Database before starting
+  // Initialize Firestore
+  initFirestore();
+
+  // Initialize Local Database Cache
   initDb();
 
+  // Automatically retrieve database cloud backup on boot
+  await syncFromCloudToLocal();
+
   // If in dev mode, run Vite middleware
-  if (process.env.NODE_ENV !== 'production' && process.env.DISABLE_HMR !== 'true') {
+  if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',

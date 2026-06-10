@@ -11,7 +11,7 @@ import {
   MapPin,
   IndianRupee 
 } from 'lucide-react';
-import { Project, LaborExpense, WorkerType, UserRole } from '../types';
+import { Project, LaborExpense, WorkerType, UserRole, PaymentStatus } from '../types';
 
 interface LaborExpenseTrackerProps {
   activeProject: Project | null;
@@ -37,6 +37,7 @@ export default function LaborExpenseTracker({
   const [numWorkers, setNumWorkers] = useState('');
   const [dailyWage, setDailyWage] = useState('');
   const [remarks, setRemarks] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(PaymentStatus.PAID);
 
   const canEdit = currentUserRole === UserRole.ADMIN || currentUserRole === UserRole.MESTRI;
 
@@ -51,6 +52,7 @@ export default function LaborExpenseTracker({
       numWorkers: parseInt(numWorkers) || 0,
       dailyWage: parseFloat(dailyWage) || 0,
       remarks,
+      paymentStatus,
     });
 
     setIsFormOpen(false);
@@ -63,6 +65,7 @@ export default function LaborExpenseTracker({
     setNumWorkers('');
     setDailyWage('');
     setRemarks('');
+    setPaymentStatus(PaymentStatus.PAID);
   };
 
   // Filter labor for active project
@@ -197,6 +200,36 @@ export default function LaborExpenseTracker({
                   />
                 </div>
 
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Expense Payment Status *</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      id="labor-pay-status-paid-btn"
+                      type="button"
+                      onClick={() => setPaymentStatus(PaymentStatus.PAID)}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center ${
+                        paymentStatus === PaymentStatus.PAID
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-700'
+                          : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
+                      }`}
+                    >
+                      Paid
+                    </button>
+                    <button
+                      id="labor-pay-status-credit-btn"
+                      type="button"
+                      onClick={() => setPaymentStatus(PaymentStatus.CREDIT)}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center ${
+                        paymentStatus === PaymentStatus.CREDIT
+                          ? 'bg-rose-50 border-rose-500 text-rose-700'
+                          : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
+                      }`}
+                    >
+                      In Credit
+                    </button>
+                  </div>
+                </div>
+
                 {/* Live total widget */}
                 {numWorkers && dailyWage && (
                   <div className="bg-red-50/50 border border-red-100 p-3 rounded-xl flex items-center justify-between text-xs">
@@ -249,6 +282,7 @@ export default function LaborExpenseTracker({
                       <th className="px-3 py-3 text-center">Hands on Site</th>
                       <th className="px-4 py-3 text-right">Daily Wage Rate</th>
                       <th className="px-4 py-3">Remarks / Operations done</th>
+                      <th className="px-4 py-3">Status</th>
                       <th className="px-4 py-3 text-right">Total Debit</th>
                     </tr>
                   </thead>
@@ -269,6 +303,15 @@ export default function LaborExpenseTracker({
                         </td>
                         <td className="px-4 py-3 max-w-[200px] truncate text-slate-500" title={lab.remarks}>
                           {lab.remarks || '-'}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+                            lab.paymentStatus === PaymentStatus.CREDIT
+                              ? 'bg-rose-50 text-rose-600 border-rose-100'
+                              : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                          }`}>
+                            {lab.paymentStatus || PaymentStatus.PAID}
+                          </span>
                         </td>
                         <td className="px-4 py-3 text-right text-slate-950 font-black text-sm whitespace-nowrap">
                           ₹{lab.totalWage.toLocaleString('en-IN')}

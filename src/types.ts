@@ -17,6 +17,11 @@ export enum ProjectStatus {
   ON_HOLD = 'On Hold',
 }
 
+export enum PaymentStatus {
+  PAID = 'Paid',
+  CREDIT = 'In Credit',
+}
+
 export interface Project {
   id: string;
   projectName: string;
@@ -46,6 +51,7 @@ export enum MaterialCategory {
   SAND = 'Sand',
   JELLY = 'Jelly',
   BRICKS = 'Bricks',
+  BARBENDING = 'Barbending Labor',
   ELECTRICAL = 'Electrical',
   PLUMBING = 'Plumbing',
   PAINT = 'Paint',
@@ -68,6 +74,12 @@ export interface MaterialPurchase {
   billUrl?: string; // Data URI / Base64 string for direct browser preview
   enteredBy: string; // User Name/ID
   isDeleted: boolean; // For soft delete
+  paymentStatus?: PaymentStatus; // Paid or In Credit
+  paidAmount?: number;
+  creditAmount?: number;
+  transportCharges?: number;
+  extraExpenses?: number;
+  extraExpensesRemarks?: string;
 }
 
 export enum WorkerType {
@@ -89,6 +101,7 @@ export interface LaborExpense {
   totalWage: number;
   remarks: string;
   enteredBy: string;
+  paymentStatus?: PaymentStatus; // Paid or In Credit
 }
 
 export enum DailyExpenseCategory {
@@ -109,6 +122,7 @@ export interface DailyExpense {
   amount: number;
   billUrl?: string; // Data URI / Base64 string for direct browser preview
   enteredBy: string;
+  paymentStatus?: PaymentStatus; // Paid or In Credit
 }
 
 export interface AuditLog {

@@ -1,5 +1,5 @@
 {
-  "name": "Construction Budget & Expense Management",
+  "name": "LV Constructions Budget & Expense Management",
   "description": "Real-time tracking of budgets, advances, purchases, daily site expenses, and audits for contractors, proprietors, and site supervisors.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

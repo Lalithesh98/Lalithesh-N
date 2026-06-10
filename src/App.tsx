@@ -23,7 +23,15 @@ import {
   CheckCircle,
   IndianRupee,
   Lock,
-  Search
+  Search,
+  Camera,
+  Menu,
+  Database,
+  Copy,
+  Download,
+  Upload,
+  Smartphone,
+  Check
 } from 'lucide-react';
 
 // Custom types and API helpers
@@ -51,6 +59,7 @@ import ExpenseReconciliation from './components/ExpenseReconciliation';
 import DocumentManager from './components/DocumentManager';
 import ReportGenerator from './components/ReportGenerator';
 import AuditTrailViewer from './components/AuditTrailViewer';
+import StagePhotosManager from './components/StagePhotosManager';
 import NotificationDrawer from './components/NotificationDrawer';
 import ReceiptLightbox from './components/ReceiptLightbox';
 
@@ -64,7 +73,8 @@ type AppTabs =
   | 'reconciliation' 
   | 'documents' 
   | 'reports' 
-  | 'audit';
+  | 'audit'
+  | 'photos';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<AppTabs>('dashboard');
@@ -95,18 +105,57 @@ export default function App() {
   const activeUser = sessionUser || { id: 'u1', name: 'Lalithesh N', role: UserRole.ADMIN, email: 'lalithesh@lvconstructions.com' };
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [previewBillUrl, setPreviewBillUrl] = useState<string | null>(null);
   const [previewMetadata, setPreviewMetadata] = useState<any | null>(null);
+
+  // Database Sync Modal states
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [syncInputText, setSyncInputText] = useState('');
+  const [syncStatus, setSyncStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [copiedSyncCode, setCopiedSyncCode] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Security Credentials Administration State
+  const [users, setUsers] = useState<any[]>([]);
+  const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
+  const [securityEditPasswords, setSecurityEditPasswords] = useState<Record<string, string>>({});
+  const [securityFeedback, setSecurityFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [isUpdatingPasswordId, setIsUpdatingPasswordId] = useState<string | null>(null);
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({
+    u1: true,
+    u2: true,
+    u3: true
+  });
+
+  const handleUpdatePassword = async (targetUserId: string, newPass: string) => {
+    if (!newPass.trim()) {
+      setSecurityFeedback({ type: 'error', message: 'Credentials cannot be completely blank.' });
+      return;
+    }
+    setIsUpdatingPasswordId(targetUserId);
+    setSecurityFeedback(null);
+    try {
+      const res = await appApi.updateUserPassword(targetUserId, newPass, activeUser.id, activeUser.name);
+      setSecurityFeedback({ type: 'success', message: res.message });
+      // Reload states silently
+      await loadDatabaseState(true);
+    } catch (err: any) {
+      setSecurityFeedback({ type: 'error', message: err?.message || 'Failed to sync credentials configuration.' });
+    } finally {
+      setIsUpdatingPasswordId(null);
+    }
+  };
 
   // Define tab pages permissions for each of the 3 roles
   const getTabsForRole = (role: UserRole): AppTabs[] => {
     switch (role) {
       case UserRole.ADMIN:
-        return ['dashboard', 'projects', 'advances', 'materials', 'labor', 'daily', 'reconciliation', 'documents', 'reports', 'audit'];
+        return ['dashboard', 'projects', 'advances', 'materials', 'labor', 'daily', 'reconciliation', 'documents', 'reports', 'audit', 'photos'];
       case UserRole.PROPRIETOR:
-        return ['dashboard', 'reconciliation', 'documents', 'reports'];
+        return ['dashboard', 'reconciliation', 'documents', 'reports', 'photos'];
       case UserRole.MESTRI:
-        return ['dashboard', 'materials', 'labor', 'daily', 'documents'];
+        return ['dashboard', 'materials', 'labor', 'daily', 'documents', 'photos'];
       default:
         return ['dashboard'];
     }
@@ -161,6 +210,7 @@ export default function App() {
       setDailyExpenses(data.dailyExpenses || []);
       setNotifications(data.notifications || []);
       setAuditLogs(data.auditLogs || []);
+      setUsers(data.users || []);
 
       // Retain or select active project
       if (activeProjects.length > 0) {
@@ -284,6 +334,35 @@ export default function App() {
     setPreviewMetadata(metadata || null);
   };
 
+  const handleApplySyncCode = async (code: string) => {
+    if (!code.trim()) {
+      setSyncStatus({ type: 'error', message: 'Please paste a valid sync code first.' });
+      return;
+    }
+    setIsSyncing(true);
+    setSyncStatus(null);
+    try {
+      const decodedStr = decodeURIComponent(escape(atob(code.trim())));
+      const parsed = JSON.parse(decodedStr);
+      if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.users) || !Array.isArray(parsed.projects)) {
+        throw new Error('Malformed database schema detected within the sync code.');
+      }
+      
+      const res = await appApi.importDatabase(parsed);
+      setSyncStatus({ type: 'success', message: 'Database successfully imported! Reloading state...' });
+      setSyncInputText('');
+      setTimeout(() => {
+        setIsSyncModalOpen(false);
+        setSyncStatus(null);
+        window.location.reload();
+      }, 2000);
+    } catch (err: any) {
+      setSyncStatus({ type: 'error', message: 'Failed to restore: ' + err.message });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   // Derive unread alerts
   const unreadNotifs = notifications.filter(n => !n.isRead);
 
@@ -299,7 +378,8 @@ export default function App() {
       case 'reconciliation': return 'Ledger Reconciliation';
       case 'documents': return 'Invoices & Files';
       case 'reports': return 'Financial Reports';
-      case 'audit': return 'Audit Logs';
+      case 'audit': return 'Audit Logs & Invoices';
+      case 'photos': return 'Stage Progress Photos';
     }
   };
 
@@ -321,7 +401,7 @@ export default function App() {
               </div>
               <div>
                 <h1 className="text-base font-extrabold tracking-tight uppercase">LV Constructions</h1>
-                <p className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-widest leading-none">Dashboard Terminal</p>
+                <p className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-widest leading-none">Budget & Expense Management</p>
               </div>
             </div>
 
@@ -331,7 +411,7 @@ export default function App() {
                 LV Constructions Active System
               </span>
               <h2 className="text-3xl font-extrabold tracking-tight leading-tight">
-                Construction Budget & Expense Management
+                Budget & Expense Management
               </h2>
               <p className="text-slate-400 text-xs leading-relaxed">
                 Seamless real-time logs, on-site material deliveries, labor payouts, and executive reconciliations in one central ledger. Fully secure with credential protection.
@@ -355,7 +435,7 @@ export default function App() {
 
             {/* Footer tags */}
             <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest relative z-10">
-              LV Constructions • Ledger Terminal v2.1
+              LV Constructions • Budget & Expense Management
             </div>
           </div>
 
@@ -371,7 +451,7 @@ export default function App() {
               <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 block">Instant Portal Gateways</label>
               
               <button
-                onClick={() => handleQuickLogin('lalithesh@lvconstructions.com', 'admin123')}
+                onClick={() => handleQuickLogin('lalithesh@lvconstructions.com', users.find(u => u.id === 'u1')?.password || 'admin123')}
                 className="w-full text-left p-3.5 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/10 transition-all flex items-center gap-3.5 group cursor-pointer"
               >
                 <div className="p-2 mr-0.5 rounded-xl bg-blue-500/10 text-blue-600 group-hover:bg-blue-500/20 transition-all">
@@ -380,14 +460,14 @@ export default function App() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <span className="font-extrabold text-slate-800 text-xs">Lalithesh N (Admin)</span>
-                    <span className="text-[8px] font-black bg-blue-50 text-blue-605 border border-blue-100 uppercase px-1.5 py-0.5 rounded-md">Pass: admin123</span>
+                    <span className="text-[8px] font-black bg-blue-50 text-blue-605 border border-blue-100 uppercase px-1.5 py-0.5 rounded-md">Pass: {users.find(u => u.id === 'u1')?.password || 'admin123'}</span>
                   </div>
                   <p className="text-[10px] text-slate-400 mt-0.5 truncate">lalithesh@lvconstructions.com • Full Control</p>
                 </div>
               </button>
 
               <button
-                onClick={() => handleQuickLogin('varun@lvconstructions.com', 'varun123')}
+                onClick={() => handleQuickLogin('varun@lvconstructions.com', users.find(u => u.id === 'u2')?.password || 'varun123')}
                 className="w-full text-left p-3.5 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/10 transition-all flex items-center gap-3.5 group cursor-pointer"
               >
                 <div className="p-2 mr-0.5 rounded-xl bg-purple-500/10 text-purple-600 group-hover:bg-purple-500/20 transition-all">
@@ -396,14 +476,14 @@ export default function App() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <span className="font-extrabold text-slate-800 text-xs">Varun Kashyap (Proprietor)</span>
-                    <span className="text-[8px] font-black bg-purple-50 text-purple-605 border border-purple-100 uppercase px-1.5 py-0.5 rounded-md">Pass: varun123</span>
+                    <span className="text-[8px] font-black bg-purple-50 text-purple-605 border border-purple-100 uppercase px-1.5 py-0.5 rounded-md">Pass: {users.find(u => u.id === 'u2')?.password || 'varun123'}</span>
                   </div>
                   <p className="text-[10px] text-slate-400 mt-0.5 truncate">varun@lvconstructions.com • Audit Access</p>
                 </div>
               </button>
 
               <button
-                onClick={() => handleQuickLogin('nagaraj@lvconstructions.com', 'nagaraj123')}
+                onClick={() => handleQuickLogin('nagaraj@lvconstructions.com', users.find(u => u.id === 'u3')?.password || 'nagaraj123')}
                 className="w-full text-left p-3.5 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/10 transition-all flex items-center gap-3.5 group cursor-pointer"
               >
                 <div className="p-2 mr-0.5 rounded-xl bg-amber-500/10 text-amber-600 group-hover:bg-amber-500/20 transition-all">
@@ -412,7 +492,7 @@ export default function App() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <span className="font-extrabold text-slate-800 text-xs">Nagaraj S (Mestri)</span>
-                    <span className="text-[8px] font-black bg-amber-50 text-amber-650 border border-amber-100 uppercase px-1.5 py-0.5 rounded-md">Pass: nagaraj123</span>
+                    <span className="text-[8px] font-black bg-amber-50 text-amber-650 border border-amber-100 uppercase px-1.5 py-0.5 rounded-md">Pass: {users.find(u => u.id === 'u3')?.password || 'nagaraj123'}</span>
                   </div>
                   <p className="text-[10px] text-slate-400 mt-0.5 truncate">nagaraj@lvconstructions.com • Daily Site Logs</p>
                 </div>
@@ -497,14 +577,14 @@ export default function App() {
                 key={role}
                 onClick={async () => {
                   let email = 'lalithesh@lvconstructions.com';
-                  let pass = 'admin123';
+                  let pass = users.find(u => u.id === 'u1')?.password || 'admin123';
                   if (role === UserRole.PROPRIETOR) {
                     email = 'varun@lvconstructions.com';
-                    pass = 'varun123';
+                    pass = users.find(u => u.id === 'u2')?.password || 'varun123';
                   }
                   if (role === UserRole.MESTRI) {
                     email = 'nagaraj@lvconstructions.com';
-                    pass = 'nagaraj123';
+                    pass = users.find(u => u.id === 'u3')?.password || 'nagaraj123';
                   }
                   await handleQuickLogin(email, pass);
                   setIsNotifOpen(false);
@@ -530,28 +610,49 @@ export default function App() {
       </div>
 
       {/* Main Container Workspace */}
-      <div className="flex flex-1 flex-col lg:flex-row">
+      <div className="flex flex-1 flex-col lg:flex-row relative">
         
+        {/* Mobile Backdrop Overlay */}
+        {isMobileSidebarOpen && (
+          <div 
+            id="mobile-sidebar-backdrop"
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 lg:hidden no-print"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+        )}
+
         {/* Left Side Utility Navigation Drawer (Web Dashboard) - Slate-900 Professional Polish style */}
-        <div className="w-full lg:w-64 bg-slate-900 text-white border-r border-slate-950 p-6 flex flex-col justify-between no-print gap-6 shadow-xl">
+        <div className={`fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-white border-r border-slate-950 p-6 flex flex-col justify-between no-print gap-6 shadow-xl transition-transform duration-300 ease-in-out lg:static lg:w-64 lg:translate-x-0 ${
+          isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}>
           <div className="space-y-6">
             
             {/* Branding Letterhead */}
-            <div className="flex items-center gap-2.5 border-b border-slate-800 pb-5">
-              <div className="p-2.5 bg-emerald-600 rounded-2xl text-white shadow-md shadow-emerald-500/15">
-                <Building2 className="w-6 h-6 stroke-[1.85]" />
+            <div className="flex items-center justify-between border-b border-slate-800 pb-5">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 bg-emerald-600 rounded-2xl text-white shadow-md shadow-emerald-500/15">
+                  <Building2 className="w-6 h-6 stroke-[1.85]" />
+                </div>
+                <div>
+                  <h1 className="font-extrabold text-white tracking-tight text-sm leading-tight uppercase truncate max-w-[130px] lg:max-w-none">LV Constructions</h1>
+                  <p className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-widest leading-none">Budget & Expense Mgmt</p>
+                </div>
               </div>
-              <div>
-                <h1 className="font-extrabold text-white tracking-tight text-sm leading-tight uppercase">LV Constructions</h1>
-                <p className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-widest leading-none">Dashboard Terminal</p>
-              </div>
+              <button
+                id="close-sidebar-mobile-btn"
+                onClick={() => setIsMobileSidebarOpen(false)}
+                className="lg:hidden p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                title="Close Navigation"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
             {/* Active Project Dropdown Switcher (Central Source) */}
             <div className="space-y-1.5">
               <label htmlFor="central-proj-select" className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Selected Site Project</label>
               {projects.length === 0 ? (
-                <p className="text-xs text-rose-450 font-bold">No active sites setup</p>
+                <p className="text-xs text-rose-455 font-bold">No active sites setup</p>
               ) : (
                 <div className="relative">
                   <select
@@ -589,12 +690,16 @@ export default function App() {
                 if (tab === 'documents') icon = <FileText className="w-4 h-4" />;
                 if (tab === 'reports') icon = <BookOpen className="w-4 h-4" />;
                 if (tab === 'audit') icon = <History className="w-4 h-4" />;
+                if (tab === 'photos') icon = <Camera className="w-4 h-4" />;
 
                 return (
                   <button
                     id={`nav-link-${tab}`}
                     key={tab}
-                    onClick={() => setActiveTab(tab)}
+                    onClick={() => {
+                      setActiveTab(tab);
+                      setIsMobileSidebarOpen(false);
+                    }}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all justify-between cursor-pointer select-none ${
                       isActive 
                         ? 'bg-white/10 text-emerald-405 border-r-3 border-emerald-500 font-bold shadow-sm' 
@@ -615,7 +720,7 @@ export default function App() {
           {/* Quick Stats sidebar widget or user logout drawer */}
           <div className="space-y-5">
             {activeProject && (
-              <div className="pt-6 border-t border-slate-800 space-y-3.5">
+              <div className="pt-6 border-t border-slate-800 space-y-3.5 pb-2">
                 <div>
                   <dt className="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-none">Overall Project Name</dt>
                   <dd className="text-xs font-black text-slate-200 mt-1 truncate">{activeProject.projectName}</dd>
@@ -631,7 +736,7 @@ export default function App() {
             )}
 
             {/* Authenticated User Session Detail & Logout */}
-            <div className="pt-6 border-t border-slate-800 gap-3 flex flex-col">
+            <div className="pt-4 border-t border-slate-800 gap-3 flex flex-col">
               <div className="flex items-center gap-3 bg-slate-850 p-2.5 rounded-xl border border-slate-800/40">
                 <div className="w-8 h-8 rounded-xl bg-emerald-600/25 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-extrabold text-xs">
                   {activeUser.name.charAt(0)}
@@ -644,7 +749,10 @@ export default function App() {
 
               <button
                 id="sidebar-logout-btn"
-                onClick={handleLogout}
+                onClick={() => {
+                  handleLogout();
+                  setIsMobileSidebarOpen(false);
+                }}
                 className="flex items-center justify-center gap-2 w-full py-2.5 bg-slate-800/50 hover:bg-rose-950/20 hover:text-rose-401 border border-slate-800 hover:border-rose-900/30 rounded-xl text-[11px] font-bold text-slate-400 hover:text-rose-400 transition-all cursor-pointer select-none"
               >
                 <LogOut className="w-3.5 h-3.5" />
@@ -660,9 +768,21 @@ export default function App() {
           
           {/* Central Control bar header */}
           <header className="flex justify-between items-center bg-white p-4.5 px-6 border border-slate-200 rounded-2xl shadow-sm no-print">
-            <div className="space-y-0.5">
-              <h2 className="text-base font-extrabold text-slate-900 tracking-tight">Active Terminal Panel</h2>
-              <p className="text-xs text-slate-500">Manage, review, print and run compliance filters on project data pipelines.</p>
+            <div className="flex items-center gap-3.5">
+              <button
+                id="mobile-sidebar-hamburger"
+                onClick={() => setIsMobileSidebarOpen(true)}
+                className="lg:hidden p-2.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-605 rounded-xl transition-colors cursor-pointer flex items-center justify-center mr-0.5"
+                title="Open Navigation"
+              >
+                <Menu className="w-4.5 h-4.5 text-slate-600" />
+              </button>
+
+              <div className="space-y-0.5">
+                <h2 className="text-base font-extrabold text-slate-900 tracking-tight">Active Terminal Panel</h2>
+                <p className="text-xs text-slate-500 hidden md:block">Manage, review, print and run compliance filters on project data pipelines.</p>
+                <p className="text-xs text-slate-500 md:hidden">LV Site Control Center Panels.</p>
+              </div>
             </div>
 
             <div className="flex items-center gap-3.5">
@@ -691,6 +811,33 @@ export default function App() {
                   onClose={() => setIsNotifOpen(false)}
                 />
               </div>
+
+              {/* Database Sync Tool */}
+              <button
+                id="header-db-sync-btn"
+                onClick={() => {
+                  setSyncStatus(null);
+                  setIsSyncModalOpen(true);
+                }}
+                className="px-3.5 py-2.5 bg-indigo-50/50 hover:bg-slate-100 border border-slate-150 text-indigo-700 hover:text-indigo-805 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+                title="Cross-Device Data Syncing, Backups & Uploads"
+              >
+                <Database className="w-5 h-5" />
+                <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">Sync & Backups</span>
+              </button>
+
+              {/* Security Credentials Shield (Admin Only) */}
+              {currentUserRole === UserRole.ADMIN && (
+                <button
+                  id="header-security-btn"
+                  onClick={() => setIsSecurityModalOpen(true)}
+                  className="px-3.5 py-2.5 bg-amber-50 border border-amber-200 hover:border-amber-300 text-amber-800 hover:text-amber-900 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                  title="🔑 Admin Credentials Security Panel"
+                >
+                  <Lock className="w-4 h-4 text-amber-600" />
+                  <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">Credentials Shield</span>
+                </button>
+              )}
 
               {/* Data Refresh pipeline trigger */}
               <button
@@ -852,6 +999,16 @@ export default function App() {
                     <AuditTrailViewer 
                       auditLogs={auditLogs}
                       currentUserRole={currentUserRole}
+                      activeProject={activeProject}
+                      projects={projects}
+                    />
+                  )}
+
+                  {activeTab === 'photos' && (
+                    <StagePhotosManager 
+                      activeProject={activeProject}
+                      currentUserRole={currentUserRole}
+                      currentUserName={sessionUser.name}
                     />
                   )}
                 </>
@@ -874,6 +1031,416 @@ export default function App() {
             setPreviewMetadata(null);
           }} 
         />
+      )}
+
+      {/* Database Sync Modal */}
+      {isSyncModalOpen && (
+        <div id="database-sync-modal" className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 md:p-7 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-start border-b border-slate-105 pb-4">
+              <div className="flex items-center gap-2 text-indigo-700">
+                <Database className="w-6 h-6 animate-pulse" />
+                <div className="space-y-0.5 animate-pulse">
+                  <h3 className="text-xs font-black text-slate-900 uppercase">Cross-Device Database Synchronizer</h3>
+                  <p className="text-[9px] font-semibold text-indigo-500 uppercase">Sync Development & Mobile Databases</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsSyncModalOpen(false)}
+                className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded-xl transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Explainer */}
+            <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 text-[11px] text-slate-600 space-y-2 leading-relaxed">
+              <p className="font-bold text-slate-700">💡 Why are the editor and mobile data different?</p>
+              <p>
+                To provide safe drafting and responsive previewing, Google AI Studio hosts your <strong>Editor Preview (Dev Container)</strong> and <strong>Mobile Shared App (Production Container)</strong> on two separate, fully isolated environments.
+              </p>
+              <p>
+                As a result, changes made inside your editor do not automatically show up on your mobile app, and vice versa. Use this panel to instantly sync your data across both platforms using a simple <strong>Sync Code</strong> or <strong>Backup file</strong>.
+              </p>
+            </div>
+
+            {/* Direct Sync Option 1: Clipboard Base64 Transfer */}
+            <div className="bg-indigo-50/40 border border-indigo-100/50 rounded-2xl p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black text-indigo-900 uppercase tracking-wide block">Option A: Wireless Copy-Paste (Sync Code)</span>
+                <span className="text-[8px] bg-indigo-100 text-indigo-805 font-extrabold px-1.5 py-0.5 rounded-full uppercase">Simplest! No Files Required</span>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                <p className="text-[11px] font-semibold text-slate-600 leading-normal">
+                  <strong>1. Export Code:</strong> Click below to generate and copy a compact sync code containing your current database records.
+                </p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const fullDb = await appApi.getData();
+                      const stringified = JSON.stringify(fullDb);
+                      const b64 = btoa(unescape(encodeURIComponent(stringified)));
+                      await navigator.clipboard.writeText(b64);
+                      setCopiedSyncCode(true);
+                      setTimeout(() => setCopiedSyncCode(false), 3000);
+                    } catch (err: any) {
+                      alert('Failed to generate sync code: ' + err.message);
+                    }
+                  }}
+                  className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all border shadow-xs ${
+                    copiedSyncCode
+                      ? 'bg-emerald-600 text-white border-emerald-600'
+                      : 'bg-white hover:bg-slate-50 text-indigo-700 border-indigo-200 hover:border-indigo-300'
+                  }`}
+                >
+                  {copiedSyncCode ? (
+                    <>
+                      <Check className="w-4 h-4 animate-bounce" />
+                      <span>Copied to Clipboard!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      <span>Generate & Copy Sync Code</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="space-y-2 border-t border-indigo-100/50 pt-3 text-xs">
+                <label className="text-[11px] font-semibold text-slate-600 block leading-normal">
+                  <strong>2. Import Code:</strong> On the other device (e.g. your mobile browser), open this menu and paste the Sync Code below to restore.
+                </label>
+                <textarea
+                  placeholder="Paste the sync code here..."
+                  value={syncInputText}
+                  onChange={(e) => setSyncInputText(e.target.value)}
+                  className="w-full h-20 px-3 py-2 border border-slate-200 bg-white rounded-xl text-xs outline-none focus:border-indigo-500 font-mono text-slate-700 font-medium placeholder-slate-400"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleApplySyncCode(syncInputText)}
+                  disabled={isSyncing || !syncInputText.trim()}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold uppercase py-2.5 rounded-xl text-xs cursor-pointer select-none transition-all shadow-xs"
+                >
+                  {isSyncing ? 'Restoring Ledger data...' : 'Apply Pasted Sync Code'}
+                </button>
+              </div>
+            </div>
+
+            {/* Sync Option 2: File Backup / Restore */}
+            <div className="border border-slate-200 rounded-2xl p-4 space-y-4">
+              <span className="text-[10px] font-black text-slate-700 uppercase tracking-wide block">Option B: Offline File Import & Export</span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* Download backup file button */}
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-bold text-slate-500 block uppercase tracking-wider">Create Safe Backup:</span>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const fullDb = await appApi.getData();
+                        const stringified = JSON.stringify(fullDb, null, 2);
+                        const blob = new Blob([stringified], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `lv_constructions_db_backup_${new Date().toISOString().split('T')[0]}.json`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                      } catch (err: any) {
+                        alert('Failed to download: ' + err.message);
+                      }
+                    }}
+                    className="w-full py-2.5 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Download className="w-4 h-4 text-slate-500" />
+                    <span>Download JSON File</span>
+                  </button>
+                </div>
+
+                {/* Import backup file input */}
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-bold text-slate-500 block uppercase tracking-wider">Restore JSON File:</span>
+                  <label className="w-full py-2.5 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-305 text-slate-705 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all border-dashed">
+                    <Upload className="w-4 h-4 text-slate-500" />
+                    <span>Select Backup File</span>
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={async (event) => {
+                        const file = event.target.files?.[0];
+                        if (!file) return;
+                        setIsSyncing(true);
+                        setSyncStatus(null);
+                        
+                        const reader = new FileReader();
+                        reader.onload = async (e) => {
+                          try {
+                            const text = e.target?.result as string;
+                            const parsed = JSON.parse(text);
+                            if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.users) || !Array.isArray(parsed.projects)) {
+                              throw new Error('Malformed database schema. Missing users or projects arrays.');
+                            }
+                            
+                            await appApi.importDatabase(parsed);
+                            setSyncStatus({ type: 'success', message: 'Backup file successfully imported! Reloading containers...' });
+                            setTimeout(() => {
+                              setIsSyncModalOpen(false);
+                              setSyncStatus(null);
+                              window.location.reload();
+                            }, 2000);
+                          } catch (err: any) {
+                            setSyncStatus({ type: 'error', message: 'File read error: ' + err.message });
+                          } finally {
+                            setIsSyncing(false);
+                          }
+                        };
+                        reader.readAsText(file);
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Sync Option 3: Real-Time Firestore Cloud Sync */}
+            <div className="bg-emerald-50/30 border border-emerald-100/50 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black text-emerald-950 uppercase tracking-wide block">Option C: cloud sync (Firestore)</span>
+                <span className="text-[8px] bg-emerald-100 text-emerald-805 font-extrabold px-1.5 py-0.5 rounded-full uppercase">Automatic & Real-Time</span>
+              </div>
+              <p className="text-[10.5px] text-slate-600 leading-normal">
+                Any modifications you make are automatically backed up to Firestore in real-time. If databases on your mobile app or editor are ever out of sync, trigger a manual Cloud Pull below to align both seamlessly.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                {/* Manual Cloud Pull */}
+                <button
+                  type="button"
+                  disabled={isSyncing}
+                  onClick={async () => {
+                    setIsSyncing(true);
+                    setSyncStatus(null);
+                    try {
+                      const res = await appApi.pullDatabaseFromCloud();
+                      setSyncStatus({ type: 'success', message: res.message + ' Refreshing...' });
+                      setTimeout(() => {
+                        setIsSyncModalOpen(false);
+                        setSyncStatus(null);
+                        window.location.reload();
+                      }, 2000);
+                    } catch (err: any) {
+                      setSyncStatus({ type: 'error', message: err.message });
+                    } finally {
+                      setIsSyncing(false);
+                    }
+                  }}
+                  className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm"
+                >
+                  <Download className="w-4 h-4 text-emerald-100" />
+                  <span>Manual Pull from Cloud</span>
+                </button>
+
+                {/* Manual Cloud Push */}
+                <button
+                  type="button"
+                  disabled={isSyncing}
+                  onClick={async () => {
+                    setIsSyncing(true);
+                    setSyncStatus(null);
+                    try {
+                      const res = await appApi.pushDatabaseToCloud();
+                      setSyncStatus({ type: 'success', message: res.message });
+                    } catch (err: any) {
+                      setSyncStatus({ type: 'error', message: err.message });
+                    } finally {
+                      setIsSyncing(false);
+                    }
+                  }}
+                  className="w-full py-2.5 px-3 bg-white hover:bg-slate-50 border border-emerald-205 text-emerald-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                >
+                  <Upload className="w-4 h-4 text-emerald-600" />
+                  <span>Manual Push to Cloud</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Sync Feedback messages */}
+            {syncStatus && (
+              <div
+                id="sync-status"
+                className={`p-3.5 rounded-xl text-xs font-bold leading-normal ${
+                  syncStatus.type === 'success'
+                    ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+                    : 'bg-rose-50 border border-rose-205 text-rose-800'
+                }`}
+              >
+                {syncStatus.message}
+              </div>
+            )}
+
+            <div className="flex justify-between items-center text-[9px] font-bold text-slate-400 select-none border-t border-slate-100 pt-3">
+              <span>LV Site Control Core v1.5 • Secure Container Isolation</span>
+              <span className="text-indigo-500 hover:underline cursor-pointer" onClick={() => loadDatabaseState()}>Re-fetch from server</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Security Credentials Shield Modal */}
+      {isSecurityModalOpen && (
+        <div id="security-admin-modal" className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-xl w-full max-h-[92vh] overflow-y-auto p-6 md:p-8 space-y-6 animate-in zoom-in-95 duration-150">
+            
+            {/* Modal Header */}
+            <div className="flex justify-between items-start border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 bg-amber-500/10 text-amber-700 rounded-2xl">
+                  <Lock className="w-6 h-6 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide leading-none">Security & Password Administration</h3>
+                  <p className="text-[10px] font-black text-slate-450 uppercase tracking-widest mt-1">Credentials Control Shield</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsSecurityModalOpen(false);
+                  setSecurityFeedback(null);
+                }}
+                className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded-xl transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Warning advisory message */}
+            <div className="bg-amber-50/50 border border-amber-200/50 rounded-2xl p-4 text-[11px] text-amber-900 space-y-2 leading-relaxed">
+              <p className="font-extrabold flex items-center gap-1.5 uppercase tracking-wider text-[10px] text-amber-850">
+                ⚠️ Administrative Access Warning
+              </p>
+              <p>
+                As the <strong>Contractor (Admin)</strong>, you have the absolute authority to oversee, inspect, and reset the passwords of all platform supervisors. Updated keys synchronize with on-site devices and cloud-backups instantly.
+              </p>
+            </div>
+
+            {/* List of user credentials */}
+            <div className="space-y-4">
+              {['u1', 'u2', 'u3'].map(uid => {
+                // Find matching user from our live DB states or default back to seeded placeholders
+                const u = users.find(user => user.id === uid) || (
+                  uid === 'u1' ? { id: 'u1', name: 'Lalithesh N', role: UserRole.ADMIN, email: 'lalithesh@lvconstructions.com', username: 'lalithesh', password: 'admin123' } :
+                  uid === 'u2' ? { id: 'u2', name: 'Varun Kashyap', role: UserRole.PROPRIETOR, email: 'varun@lvconstructions.com', username: 'varun', password: 'varun123' } :
+                  { id: 'u3', name: 'Nagaraj S', role: UserRole.MESTRI, email: 'nagaraj@lvconstructions.com', username: 'nagaraj', password: 'nagaraj123' }
+                );
+
+                const currentInputVal = securityEditPasswords[uid] !== undefined 
+                  ? securityEditPasswords[uid] 
+                  : u.password;
+
+                const isPassVisible = visiblePasswords[uid];
+
+                return (
+                  <div key={uid} className="p-4 rounded-2xl border border-slate-150 bg-slate-50/50 hover:bg-slate-50 space-y-3 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="min-w-0">
+                        <h4 className="font-extrabold text-xs text-slate-800">{u.name}</h4>
+                        <p className="text-[10px] text-slate-450 font-bold tracking-tight">
+                          Email: {u.email} • User: {u.username}
+                        </p>
+                      </div>
+                      <span className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded-full ${
+                        uid === 'u1' ? 'bg-blue-50 text-blue-650 border border-blue-200' :
+                        uid === 'u2' ? 'bg-purple-50 text-purple-650 border border-purple-200' :
+                        'bg-amber-50 text-amber-700 border border-amber-200'
+                      }`}>
+                        {u.role}
+                      </span>
+                    </div>
+
+                    {/* Password display & entry field */}
+                    <div className="space-y-1.5 pt-1">
+                      <label htmlFor={`edit-pass-input-${uid}`} className="text-[9px] font-black text-slate-450 uppercase tracking-widest block font-sans">Stored Secret Key</label>
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            id={`edit-pass-input-${uid}`}
+                            type={isPassVisible ? 'text' : 'password'}
+                            value={currentInputVal}
+                            onChange={(e) => {
+                              setSecurityEditPasswords(prev => ({
+                                ...prev,
+                                [uid]: e.target.value
+                              }));
+                            }}
+                            className="w-full pl-3 pr-24 py-2.5 bg-white border border-slate-200 focus:border-amber-500 rounded-xl text-xs outline-none transition-all font-mono font-bold text-slate-700 shadow-sm"
+                            placeholder="Enter new password"
+                          />
+                          
+                          {/* Visibility Selector */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setVisiblePasswords(prev => ({
+                                ...prev,
+                                [uid]: !prev[uid]
+                              }));
+                            }}
+                            className="absolute right-2 top-1.5 px-2.5 py-1 hover:bg-slate-150 text-[9px] font-extrabold text-slate-500 hover:text-slate-700 uppercase rounded-lg cursor-pointer transition-colors select-none"
+                          >
+                            {isPassVisible ? 'Hide Key' : 'Reveal Key'}
+                          </button>
+                        </div>
+
+                        {/* Save Action */}
+                        <button
+                          type="button"
+                          disabled={isUpdatingPasswordId !== null || currentInputVal === u.password}
+                          onClick={() => handleUpdatePassword(uid, currentInputVal)}
+                          className="px-4 py-2.5 bg-slate-900 hover:bg-slate-950 disabled:bg-slate-200 disabled:text-slate-400 text-white text-xs font-extrabold rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap min-w-[75px]"
+                        >
+                          {isUpdatingPasswordId === uid ? (
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <CheckCircle className="w-3.5 h-3.5" />
+                          )}
+                          <span>Save</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Security feedback messages banner */}
+            {securityFeedback && (
+              <div
+                id="security-feedback-badge"
+                className={`p-3.5 rounded-xl text-xs font-bold leading-normal animate-in fade-in slide-in-from-top-1 ${
+                  securityFeedback.type === 'success'
+                    ? 'bg-emerald-50 border border-emerald-250 text-emerald-850'
+                    : 'bg-rose-50 border border-rose-200 text-rose-800'
+                }`}
+              >
+                {securityFeedback.message}
+              </div>
+            )}
+
+            {/* Bottom branding footer */}
+            <div className="flex justify-between items-center text-[9px] font-bold text-slate-400 select-none border-t border-slate-100 pt-3">
+              <span>LV Secure Cryptographic Isolation Enclave</span>
+              <span className="text-amber-600 font-extrabold">ACTIVE PROTOCOL</span>
+            </div>
+
+          </div>
+        </div>
       )}
 
     </div>

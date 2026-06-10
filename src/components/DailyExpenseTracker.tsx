@@ -17,7 +17,7 @@ import {
   Compass,
   DollarSign
 } from 'lucide-react';
-import { Project, DailyExpense, DailyExpenseCategory, UserRole } from '../types';
+import { Project, DailyExpense, DailyExpenseCategory, UserRole, PaymentStatus } from '../types';
 
 interface DailyExpenseTrackerProps {
   activeProject: Project | null;
@@ -46,6 +46,7 @@ export default function DailyExpenseTracker({
   const [amount, setAmount] = useState('');
   const [billUrl, setBillUrl] = useState('');
   const [fileName, setFileName] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(PaymentStatus.PAID);
 
   const canEdit = currentUserRole === UserRole.ADMIN || currentUserRole === UserRole.MESTRI;
 
@@ -75,6 +76,7 @@ export default function DailyExpenseTracker({
       description,
       amount: parseFloat(amount) || 0,
       billUrl,
+      paymentStatus,
     });
 
     setIsFormOpen(false);
@@ -88,6 +90,7 @@ export default function DailyExpenseTracker({
     setAmount('');
     setBillUrl('');
     setFileName('');
+    setPaymentStatus(PaymentStatus.PAID);
   };
 
   // Filter daily expenses for active project
@@ -207,6 +210,36 @@ export default function DailyExpenseTracker({
                   />
                 </div>
 
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Voucher Payment Status *</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      id="daily-pay-status-paid-btn"
+                      type="button"
+                      onClick={() => setPaymentStatus(PaymentStatus.PAID)}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center ${
+                        paymentStatus === PaymentStatus.PAID
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-700'
+                          : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
+                      }`}
+                    >
+                      Paid
+                    </button>
+                    <button
+                      id="daily-pay-status-credit-btn"
+                      type="button"
+                      onClick={() => setPaymentStatus(PaymentStatus.CREDIT)}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center ${
+                        paymentStatus === PaymentStatus.CREDIT
+                          ? 'bg-rose-50 border-rose-500 text-rose-700'
+                          : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
+                      }`}
+                    >
+                      In Credit
+                    </button>
+                  </div>
+                </div>
+
                 {/* Voucher file upload picker */}
                 <div className="space-y-1">
                   <span className="text-[10px] font-bold text-slate-500 uppercase block">Voucher / Bill Upload (JPG, PNG, PDF)</span>
@@ -284,7 +317,16 @@ export default function DailyExpenseTracker({
                         <div className="flex items-center gap-2">
                           <div className="p-2 bg-white rounded-lg shadow-xs">{icon}</div>
                           <div>
-                            <span className="text-[9px] font-black uppercase text-slate-400 blocking tracking-wider">{d.category}</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">{d.category}</span>
+                              <span className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded-md border ${
+                                d.paymentStatus === PaymentStatus.CREDIT
+                                  ? 'bg-rose-50 text-rose-650 border-rose-100'
+                                  : 'bg-emerald-50 text-emerald-650 border-emerald-100'
+                              }`}>
+                                {d.paymentStatus || PaymentStatus.PAID}
+                              </span>
+                            </div>
                             <span className="text-[10px] text-slate-400 font-semibold block">{d.date}</span>
                           </div>
                         </div>
