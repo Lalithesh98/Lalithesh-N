@@ -314,6 +314,62 @@ app.post('/api/users/update-password', (req, res) => {
   });
 });
 
+// Update full user profile credentials and details
+app.post('/api/users/update-profile', (req, res) => {
+  const { userId, name, email, username, password, role, adminUserId, adminUserName } = req.body;
+  if (!userId) {
+    return res.status(400).json({ error: 'User ID is required' });
+  }
+
+  const db = readDb();
+  const user = db.users.find((u: any) => u.id === userId);
+  if (!user) {
+    return res.status(404).json({ error: 'User account not found' });
+  }
+
+  const previousValue = {
+    name: user.name,
+    email: user.email,
+    username: user.username,
+    password: user.password,
+    role: user.role,
+  };
+
+  if (name !== undefined) user.name = name;
+  if (email !== undefined) user.email = email;
+  if (username !== undefined) user.username = username;
+  if (password !== undefined) user.password = password;
+  if (role !== undefined) user.role = role;
+
+  const newValue = {
+    name: user.name,
+    email: user.email,
+    username: user.username,
+    password: user.password,
+    role: user.role,
+  };
+
+  // Append entry in Admin Audit Logs
+  db.auditLogs.unshift({
+    id: genId('audit'),
+    action: `User Profile Updated: ${user.name} (${user.role})`,
+    tableAffected: 'users',
+    recordId: userId,
+    previousValue: JSON.stringify(previousValue),
+    newValue: JSON.stringify(newValue),
+    date: new Date().toISOString(),
+    userId: adminUserId || 'u1',
+    userName: adminUserName || 'Admin',
+  });
+
+  writeDb(db);
+  res.json({ 
+    status: 'success', 
+    message: `Successfully updated profile of ${user.name}`,
+    users: db.users 
+  });
+});
+
 // Auth Login Simulation
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body;

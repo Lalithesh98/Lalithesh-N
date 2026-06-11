@@ -100,5 +100,20 @@ export const appApi = {
       adminUserName,
     });
   },
+
+  // Update full user profile credentials and details
+  updateUserProfile: async (
+    userId: string,
+    profileData: { name?: string; email?: string; username?: string; password?: string; role?: string },
+    adminUserId: string,
+    adminUserName: string
+  ) => {
+    return apiCall<{ status: string; message: string; users: any[] }>('/api/users/update-profile', 'POST', {
+      userId,
+      ...profileData,
+      adminUserId,
+      adminUserName,
+    });
+  },
 };
 export default appApi;

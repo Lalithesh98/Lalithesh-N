@@ -1001,6 +1001,9 @@ export default function App() {
                       currentUserRole={currentUserRole}
                       activeProject={activeProject}
                       projects={projects}
+                      users={users}
+                      onReloadData={async () => { await loadDatabaseState(true); }}
+                      activeUser={activeUser}
                     />
                   )}
 
