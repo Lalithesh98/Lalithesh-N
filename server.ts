@@ -554,7 +554,7 @@ app.post('/api/advances', (req, res) => {
 
 // MATERIAL PURCHASES CRUD (with soft delete)
 app.post('/api/purchases', (req, res) => {
-  const { id, projectId, date, category, materialName, quantity, unit, supplier, rate, invoiceNo, billUrl, userId, userName, paymentStatus, paidAmount, creditAmount, transportCharges, extraExpenses, extraExpensesRemarks } = req.body;
+  const { id, projectId, date, category, materialName, quantity, unit, supplier, rate, invoiceNo, billUrl, userId, userName, paymentStatus, paidAmount, creditAmount, transportCharges, extraExpenses, extraExpensesRemarks, weightKg, thicknessSpecs } = req.body;
   const db = readDb();
 
   const qty = Number(quantity) || 0;
@@ -585,6 +585,8 @@ app.post('/api/purchases', (req, res) => {
       transportCharges: transport,
       extraExpenses: extra,
       extraExpensesRemarks: extraExpensesRemarks || '',
+      weightKg: weightKg !== undefined ? Number(weightKg) : undefined,
+      thicknessSpecs: thicknessSpecs || undefined,
     };
     db.purchases.push(newPurchase);
 
@@ -654,6 +656,8 @@ app.post('/api/purchases', (req, res) => {
       transportCharges: transport,
       extraExpenses: extra,
       extraExpensesRemarks: extraExpensesRemarks || '',
+      weightKg: weightKg !== undefined ? (weightKg === null ? undefined : Number(weightKg)) : oldPurchase.weightKg,
+      thicknessSpecs: thicknessSpecs !== undefined ? (thicknessSpecs === null ? undefined : thicknessSpecs) : oldPurchase.thicknessSpecs,
     };
     db.purchases[idx] = updatedPurchase;
 

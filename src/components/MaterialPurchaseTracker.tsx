@@ -63,6 +63,10 @@ export default function MaterialPurchaseTracker({
   const [extraExpenses, setExtraExpenses] = useState('');
   const [extraExpensesRemarks, setExtraExpensesRemarks] = useState('');
 
+  // Weight / Dimensions / Specs tracking
+  const [weightKg, setWeightKg] = useState('');
+  const [thicknessSpecs, setThicknessSpecs] = useState('');
+
   const canEdit = currentUserRole === UserRole.ADMIN || currentUserRole === UserRole.MESTRI;
 
   // Sync helpers for custom split
@@ -87,8 +91,15 @@ export default function MaterialPurchaseTracker({
       if (!materialName || materialName.trim() === '') {
         setMaterialName('Steel Barbending Labor Work');
       }
+    } else if (cat === MaterialCategory.CENTRING) {
+      setUnit('Pcs');
+      if (!materialName || materialName.trim() === '' || materialName === 'Steel Barbending Labor Work') {
+        setMaterialName('Centring M.S. Plates (2ft x 3ft)');
+        setWeightKg('15');
+        setThicknessSpecs('Steel Plate, Size 2x3 ft');
+      }
     } else {
-      if (unit === 'Feet' && cat === MaterialCategory.CEMENT) {
+      if ((unit === 'Feet' || unit === 'Pcs') && cat === MaterialCategory.CEMENT) {
         setUnit('Bags');
       }
     }
@@ -124,6 +135,8 @@ export default function MaterialPurchaseTracker({
     setTransportCharges(p.transportCharges ? p.transportCharges.toString() : '');
     setExtraExpenses(p.extraExpenses ? p.extraExpenses.toString() : '');
     setExtraExpensesRemarks(p.extraExpensesRemarks || '');
+    setWeightKg(p.weightKg ? p.weightKg.toString() : '');
+    setThicknessSpecs(p.thicknessSpecs || '');
     
     // Determine payment mode based on paidAmount / creditAmount / paymentStatus
     const originalTotal = p.totalAmount;
@@ -197,6 +210,8 @@ export default function MaterialPurchaseTracker({
       transportCharges: transportVal,
       extraExpenses: extraVal,
       extraExpensesRemarks: extraExpensesRemarks,
+      weightKg: weightKg ? parseFloat(weightKg) : undefined,
+      thicknessSpecs: thicknessSpecs || undefined,
     });
 
     setIsFormOpen(false);
@@ -222,6 +237,8 @@ export default function MaterialPurchaseTracker({
     setTransportCharges('');
     setExtraExpenses('');
     setExtraExpensesRemarks('');
+    setWeightKg('');
+    setThicknessSpecs('');
   };
 
   // Filter purchases for active project
@@ -383,9 +400,44 @@ export default function MaterialPurchaseTracker({
                     placeholder={category === MaterialCategory.BARBENDING ? 'e.g. Ground Floor Slab & Column Barbending' : 'e.g. Ultratech 43 Grade Cement, FE550 Steel'}
                     value={materialName}
                     onChange={(e) => setMaterialName(e.target.value)}
-                    className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 outline-none placeholder-slate-400"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 outline-none placeholder-slate-400 font-bold"
                   />
                 </div>
+
+                {category === MaterialCategory.CENTRING && (
+                  <div className="space-y-2 p-3 bg-amber-50/40 border border-amber-100 rounded-2xl">
+                    <span className="text-[9.5px] font-black uppercase tracking-wider text-amber-700 block">
+                      ⚡ Quick Prefill Centring Materials
+                    </span>
+                    <div className="flex flex-wrap gap-1.5 max-h-44 overflow-y-auto pr-1">
+                      {[
+                        { name: 'Centring M.S. Plates (2ft x 3ft)', unit: 'Pcs', rate: 120, weightKg: 15, specs: 'Steel Plate, Size 2x3 ft' },
+                        { name: 'Centring Adjustable Props (Jacks)', unit: 'Pcs', rate: 250, weightKg: 18, specs: 'Height 2m - 4m, Steel' },
+                        { name: 'Centring Plywood Sheets (12mm)', unit: 'Sheets', rate: 1200, weightKg: 20, specs: '12mm Waterproof Plywood' },
+                        { name: 'Centring Silver Wood Planks (3"x4")', unit: 'Pcs', rate: 450, weightKg: 12, specs: 'Silver Wood, Length 10ft' },
+                        { name: 'Centring Adjustable Steel Spans', unit: 'Pcs', rate: 400, weightKg: 32, specs: 'Span length 8ft - 14ft' },
+                        { name: 'Scaffolding Metal Pipes (Class B)', unit: 'Ft', rate: 45, weightKg: 1.5, specs: 'GI Scaffolding OD 1.5"' },
+                        { name: 'Centring Oil / Mold Release Spray', unit: 'Liters', rate: 85, weightKg: 0.9, specs: 'Heavy protective formulation' },
+                      ].map((preset, pIdx) => (
+                        <button
+                          key={pIdx}
+                          type="button"
+                          onClick={() => {
+                            setMaterialName(preset.name);
+                            setUnit(preset.unit);
+                            setRate(preset.rate.toString());
+                            setWeightKg(preset.weightKg.toString());
+                            setThicknessSpecs(preset.specs);
+                          }}
+                          className="px-2.5 py-1 bg-white hover:bg-amber-150/70 border border-amber-200 text-[10px] text-amber-900 rounded-xl cursor-pointer transition-all flex items-center gap-1 font-bold shadow-xs select-none"
+                        >
+                          <span>{preset.name.replace('Centring ', '')}</span>
+                          <span className="text-[8px] bg-amber-200 text-amber-800 font-extrabold px-1 rounded-sm">₹{preset.rate}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
@@ -523,6 +575,48 @@ export default function MaterialPurchaseTracker({
                     onChange={(e) => setSupplier(e.target.value)}
                     className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50/50 outline-none"
                   />
+                </div>
+
+                {/* Material Metrics (Weight / Thickness Specs) */}
+                <div id="material-metrics-specs-block" className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center gap-1.5 border-b border-slate-200 pb-1.5">
+                    <Tag className="w-4 h-4 text-emerald-600 animate-pulse" />
+                    <span className="text-[10px] font-black text-slate-700 uppercase tracking-wider block">
+                      Weight & Thickness Parameters (wt)
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label htmlFor="pweight-input" className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1">
+                        Est. Weight (kg)
+                      </label>
+                      <input
+                        id="pweight-input"
+                        type="number"
+                        min="0"
+                        step="any"
+                        placeholder="e.g. 15, 250"
+                        value={weightKg}
+                        onChange={(e) => setWeightKg(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 bg-white rounded-xl text-xs outline-none font-bold text-slate-800"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label htmlFor="pthickness-input" className="text-[10px] font-bold text-slate-500 uppercase">
+                        Size / Thickness / Gauge
+                      </label>
+                      <input
+                        id="pthickness-input"
+                        type="text"
+                        placeholder="e.g. 12mm, Size 2x3ft"
+                        value={thicknessSpecs}
+                        onChange={(e) => setThicknessSpecs(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 bg-white rounded-xl text-xs outline-none font-semibold text-slate-700"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -756,6 +850,25 @@ export default function MaterialPurchaseTracker({
                         <span className="text-slate-800 font-bold truncate block">{pur.date}</span>
                       </div>
                     </div>
+
+                    {/* Weight & Specs Details (wt) */}
+                    {((pur.weightKg && pur.weightKg > 0) || pur.thicknessSpecs) && (
+                      <div className="bg-slate-50 border border-slate-100/70 rounded-xl p-2.5 flex items-center justify-between text-[11.5px] text-slate-600 font-bold gap-3">
+                        <span className="flex items-center gap-1 text-slate-400 text-[8.5px] uppercase font-black tracking-widest">Specs:</span>
+                        <div className="flex gap-2 flex-wrap justify-end">
+                          {pur.weightKg && (
+                            <span className="bg-white border border-slate-200 text-slate-755 px-2 py-0.5 rounded-lg text-[9.5px] font-black shadow-2xs flex items-center gap-0.5">
+                              ⚖️ {pur.weightKg} kg
+                            </span>
+                          )}
+                          {pur.thicknessSpecs && (
+                            <span className="bg-white border border-slate-200 text-slate-750 px-2 py-0.5 rounded-lg text-[9.5px] font-black shadow-2xs">
+                              📐 {pur.thicknessSpecs}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Extra Addons Ledger Indicators */}
                     {((pur.transportCharges && pur.transportCharges > 0) || (pur.extraExpenses && pur.extraExpenses > 0)) && (

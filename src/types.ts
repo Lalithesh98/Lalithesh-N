@@ -52,6 +52,7 @@ export enum MaterialCategory {
   JELLY = 'Jelly',
   BRICKS = 'Bricks',
   BARBENDING = 'Barbending Labor',
+  CENTRING = 'Centring',
   ELECTRICAL = 'Electrical',
   PLUMBING = 'Plumbing',
   PAINT = 'Paint',
@@ -80,6 +81,8 @@ export interface MaterialPurchase {
   transportCharges?: number;
   extraExpenses?: number;
   extraExpensesRemarks?: string;
+  weightKg?: number;
+  thicknessSpecs?: string;
 }
 
 export enum WorkerType {
