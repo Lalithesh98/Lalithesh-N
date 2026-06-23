@@ -218,6 +218,21 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
+// GET Firebase client config so the client can securely sync data to Firestore on behalf of the user
+app.get('/api/firebase-config', (req, res) => {
+  try {
+    const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      res.json(config);
+    } else {
+      res.status(404).json({ error: 'Firebase config not found' });
+    }
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to load Firebase config: ' + err.message });
+  }
+});
+
 // GET complete database
 app.get('/api/data', (req, res) => {
   res.json(readDb());

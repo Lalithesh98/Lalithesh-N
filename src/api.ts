@@ -81,6 +81,11 @@ export const appApi = {
     return apiCall<{ status: string; message: string }>('/api/database/import', 'POST', dbData);
   },
 
+  // Get Firebase configuration
+  getFirebaseConfig: async () => {
+    return apiCall<any>('/api/firebase-config');
+  },
+
   // Explicitly pull database state from cloud backup
   pullDatabaseFromCloud: async () => {
     return apiCall<{ status: string; message: string }>('/api/database/pull', 'POST');

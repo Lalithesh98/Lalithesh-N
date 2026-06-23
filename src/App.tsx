@@ -62,6 +62,7 @@ import AuditTrailViewer from './components/AuditTrailViewer';
 import StagePhotosManager from './components/StagePhotosManager';
 import NotificationDrawer from './components/NotificationDrawer';
 import ReceiptLightbox from './components/ReceiptLightbox';
+import { CloudSyncAgent } from './components/CloudSyncAgent';
 
 type AppTabs = 
   | 'dashboard' 
@@ -562,6 +563,17 @@ export default function App() {
     );
   }
 
+  const currentDbState = {
+    users,
+    projects,
+    advances,
+    purchases,
+    laborExpenses,
+    dailyExpenses,
+    notifications,
+    auditLogs
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 text-slate-800 selection:bg-emerald-100 selection:text-emerald-800 flex flex-col font-sans">
       
@@ -812,19 +824,11 @@ export default function App() {
                 />
               </div>
 
-              {/* Database Sync Tool */}
-              <button
-                id="header-db-sync-btn"
-                onClick={() => {
-                  setSyncStatus(null);
-                  setIsSyncModalOpen(true);
-                }}
-                className="px-3.5 py-2.5 bg-indigo-50/50 hover:bg-slate-100 border border-slate-150 text-indigo-700 hover:text-indigo-805 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
-                title="Cross-Device Data Syncing, Backups & Uploads"
-              >
-                <Database className="w-5 h-5" />
-                <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">Sync & Backups</span>
-              </button>
+              {/* Automated Cloud Sync Widget */}
+              <CloudSyncAgent 
+                currentDbState={currentDbState} 
+                onStateRestored={() => loadDatabaseState(true)} 
+              />
 
               {/* Security Credentials Shield (Admin Only) */}
               {currentUserRole === UserRole.ADMIN && (
