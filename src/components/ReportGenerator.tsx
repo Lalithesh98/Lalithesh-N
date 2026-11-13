@@ -225,7 +225,7 @@ export default function ReportGenerator({
     <div id="reports-module-container" className="space-y-6">
       
       {/* Tab Navigation header */}
-      <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-4 flex flex-wrap gap-1.5 overflow-x-auto">
+      <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-2 sm:p-4 flex flex-nowrap sm:flex-wrap gap-1.5 overflow-x-auto no-scrollbar">
         {(['budget', 'advance', 'material', 'labor', 'daily', 'monthly_summary'] as const).map(tab => {
           let tabLabel = "Budget Allocation";
           if (tab === 'advance') tabLabel = "Advances History";
@@ -243,7 +243,7 @@ export default function ReportGenerator({
                 setStartDate('');
                 setEndDate('');
               }}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer select-none ${
+              className={`px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer select-none shrink-0 ${
                 activeReportTab === tab 
                   ? 'bg-slate-900 text-white shadow-md shadow-slate-900/10' 
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
@@ -363,11 +363,11 @@ export default function ReportGenerator({
         </div>
 
         {/* Action Triggers */}
-        <div className="flex justify-end gap-3 pt-2 border-t border-slate-50">
+        <div className="flex flex-wrap sm:flex-nowrap justify-end gap-2 sm:gap-3 pt-2 border-t border-slate-50">
           <button
             id="print-report-btn"
             onClick={() => window.print()}
-            className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 rounded-xl text-xs cursor-pointer"
+            className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 rounded-xl text-xs cursor-pointer"
           >
             <Printer className="w-4 h-4 text-slate-500" /> Local Print / PDF
           </button>
@@ -376,18 +376,18 @@ export default function ReportGenerator({
             id="export-csv-btn"
             onClick={handleExportCSV}
             disabled={isExporting}
-            className={`flex items-center gap-1.5 bg-slate-900 active:bg-slate-950 text-white font-bold px-4 py-2 rounded-xl text-xs transition-colors cursor-pointer select-none ${
+            className={`flex-1 sm:flex-none justify-center flex items-center gap-1.5 bg-slate-900 active:bg-slate-950 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition-colors cursor-pointer select-none ${
               isExporting ? 'opacity-50 pointer-events-none' : 'hover:bg-slate-950'
             }`}
           >
             <FileSpreadsheet className="w-4 h-4" /> 
-            {isExporting ? 'Compiling Spreadsheet...' : 'Export formatted CSV'}
+            {isExporting ? 'Compiling...' : 'Export formatted CSV'}
           </button>
         </div>
       </div>
 
       {/* List / Data grids reports results */}
-      <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm space-y-4 printable-report-sheet">
+      <div className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-6 shadow-sm space-y-4 printable-report-sheet">
         
         {/* Invoice Letterhead visual element */}
         <div className="hidden print:block border-b-2 border-slate-900 pb-5 mb-5">
@@ -420,8 +420,8 @@ export default function ReportGenerator({
             No entries found matching the active filter parameters in this timeframe.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-slate-100">
-            <table className="w-full border-collapse text-left text-xs" id="custom-reports-table">
+          <div className="overflow-x-auto rounded-xl border border-slate-100 no-scrollbar">
+            <table className="w-full min-w-[600px] border-collapse text-left text-xs" id="custom-reports-table">
               <thead>
                 <tr className="bg-slate-50 text-slate-500 border-b border-slate-100 font-bold uppercase tracking-wider text-[10px]">
                   {tableHeaders.map((head, index) => (

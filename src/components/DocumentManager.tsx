@@ -94,14 +94,14 @@ export default function DocumentManager({
     <div id="document-manager-container" className="space-y-6">
       
       {/* Search and view metrics */}
-      <div className="bg-white p-5 border border-slate-100 rounded-2xl shadow-sm space-y-4">
+      <div className="bg-white p-4 sm:p-5 border border-slate-100 rounded-2xl shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div className="space-y-0.5">
             <h3 className="font-extrabold text-slate-800 text-base">Invoices & Receipts Repository</h3>
             <p className="text-xs text-slate-400">Archived copies of material supplier memos, cash vouchers, and site expenditures for Audit trail compliance.</p>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-start sm:self-auto">
             <span className="text-xs font-semibold text-slate-400 uppercase">Documents indexed:</span>
             <span className="p-1 px-2.5 bg-slate-900 text-white rounded-lg text-xs font-black">
               {allDocs.length} Slips
@@ -123,19 +123,19 @@ export default function DocumentManager({
             />
           </div>
 
-          <div className="flex bg-slate-50 border border-slate-200 p-1 rounded-xl gap-1">
+          <div className="grid grid-cols-3 sm:flex bg-slate-50 border border-slate-200 p-1 rounded-xl gap-1">
             {(['All', 'Material Bill', 'Site Voucher'] as const).map(fType => (
               <button
                 id={`doc-filter-btn-${fType.replace(' ', '-')}`}
                 key={fType}
                 onClick={() => setDocTypeFilter(fType)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-center justify-center whitespace-nowrap ${
                   docTypeFilter === fType 
                     ? 'bg-white text-slate-900 shadow-xs' 
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                {fType}s
+                {fType === 'All' ? 'All Docs' : fType === 'Material Bill' ? 'Materials' : 'Vouchers'}
               </button>
             ))}
           </div>

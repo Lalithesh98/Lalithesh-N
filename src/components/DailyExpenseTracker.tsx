@@ -106,17 +106,17 @@ export default function DailyExpenseTracker({
     <div id="daily-expense-container" className="space-y-6">
       
       {/* Top action header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 border border-slate-100 rounded-2xl shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-5 border border-slate-100 rounded-2xl shadow-sm">
         <div className="space-y-1">
           <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">Daily Site Vouchers</h2>
           <p className="text-xs text-slate-400">Record local operations invoices such as transport sand, machine diesel, curated tanker water, and team refreshments.</p>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="text-right">
+        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-0 border-slate-100">
+          <div className="text-left sm:text-right">
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Daily Expenses Debit</span>
-            <span className="text-lg font-black text-slate-800 flex items-center justify-end">
-              <IndianRupee className="w-4.5 h-4.5 mr-0.5 text-slate-500" />
+            <span className="text-base sm:text-lg font-black text-slate-800 flex items-center sm:justify-end">
+              <IndianRupee className="w-4 sm:w-4.5 h-4 sm:h-4.5 mr-0.5 text-slate-500" />
               {totalDailyAmt.toLocaleString('en-IN')}
             </span>
           </div>
@@ -128,7 +128,7 @@ export default function DailyExpenseTracker({
                 resetForm();
                 setIsFormOpen(true);
               }}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition-colors cursor-pointer select-none"
+              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs transition-colors cursor-pointer select-none"
             >
               <PlusCircle className="w-4 h-4" /> Log Site Voucher
             </button>

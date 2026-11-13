@@ -109,14 +109,14 @@ export default function AdvanceManager({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         
         {/* Total advances card */}
-        <div className="bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 shadow-sm flex flex-col justify-between">
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Total Advances Disbursed</span>
+            <span className="text-[11px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">Total Advances Disbursed</span>
             <span className="p-1 px-2.5 bg-slate-800 rounded-lg text-emerald-400 text-[10px] font-black uppercase">Cr</span>
           </div>
-          <div className="mt-4">
-            <h4 className="text-3xl font-black flex items-center tracking-tight">
-              <IndianRupee className="w-6 h-6 text-slate-400 mr-0.5" />
+          <div className="mt-3 sm:mt-4">
+            <h4 className="text-2xl sm:text-3xl font-black flex items-center tracking-tight">
+              <IndianRupee className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 mr-0.5" />
               {totalAdvancesGiven.toLocaleString('en-IN')}
             </h4>
             <p className="text-[10px] text-slate-400 mt-1 font-semibold">{filteredAdvances.length} Advance logs registered</p>
@@ -124,14 +124,14 @@ export default function AdvanceManager({
         </div>
 
         {/* Expenses submitted card */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-xs flex flex-col justify-between">
+        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Mestri Expense Submitted</span>
+            <span className="text-[11px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">Mestri Expense Submitted</span>
             <span className="p-1 px-2.5 bg-slate-50 text-red-500 rounded-lg text-[10px] font-black uppercase">Dr</span>
           </div>
-          <div className="mt-4">
-            <h4 className="text-3xl font-black text-slate-800 flex items-center tracking-tight">
-              <IndianRupee className="w-6 h-6 text-slate-300 mr-0.5" />
+          <div className="mt-3 sm:mt-4">
+            <h4 className="text-2xl sm:text-3xl font-black text-slate-800 flex items-center tracking-tight">
+              <IndianRupee className="w-5 h-5 sm:w-6 sm:h-6 text-slate-300 mr-0.5" />
               {totalSubmittedExpenses.toLocaleString('en-IN')}
             </h4>
             <p className="text-[10px] text-slate-400 mt-1 font-semibold">Includes Material, Labor & site accounts</p>
@@ -139,25 +139,25 @@ export default function AdvanceManager({
         </div>
 
         {/* Remaining balance card */}
-        <div className={`rounded-2xl p-5 border shadow-xs flex flex-col justify-between ${
+        <div className={`rounded-2xl p-4 sm:p-5 border shadow-xs flex flex-col justify-between ${
           remainingAdvance < 10000 ? 'bg-red-50/50 border-red-100' : 'bg-emerald-50/40 border-emerald-100'
         }`}>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Calculated Reserve Balance</span>
+            <span className="text-[11px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider">Calculated Reserve Balance</span>
             <span className={`p-1 px-2.5 rounded-lg text-[10px] font-black uppercase ${
               remainingAdvance < 10000 ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'
             }`}>Bal</span>
           </div>
-          <div className="mt-4">
-            <h4 className={`text-3xl font-black flex items-center tracking-tight ${
+          <div className="mt-3 sm:mt-4">
+            <h4 className={`text-2xl sm:text-3xl font-black flex items-center tracking-tight ${
               remainingAdvance < 10000 ? 'text-red-600' : 'text-emerald-700'
             }`}>
-              <IndianRupee className="w-6 h-6 text-opacity-50 mr-0.5" />
+              <IndianRupee className="w-5 h-5 sm:w-6 sm:h-6 text-opacity-50 mr-0.5" />
               {remainingAdvance.toLocaleString('en-IN')}
             </h4>
             {remainingAdvance < 10000 ? (
               <p className="text-[10px] text-red-500 mt-1 font-black leading-none flex items-center gap-1">
-                <AlertCircle className="w-3.5 h-3.5" /> Low Site Capital Reserve!
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" /> Low Site Capital Reserve!
               </p>
             ) : (
               <p className="text-[10px] text-emerald-600 mt-1 font-semibold">Sufficient operational buffer</p>
@@ -305,19 +305,19 @@ export default function AdvanceManager({
           )}
 
           {/* Table list of recorded advances */}
-          <div className={`${isAdmin ? 'xl:col-span-2' : 'xl:col-span-3'} bg-white border border-slate-100 rounded-2xl p-5 shadow-sm space-y-4`}>
+          <div className={`${isAdmin ? 'xl:col-span-2' : 'xl:col-span-3'} bg-white border border-slate-100 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4`}>
             <div className="space-y-1">
               <h3 className="font-extrabold text-slate-800 text-base">Advance Ledger List</h3>
               <p className="text-xs text-slate-400">Chronological list of all advances issued to {activeProject.assignedMestriName || 'site supervisors'} for project {activeProject.projectName}.</p>
             </div>
 
             {filteredAdvances.length === 0 ? (
-              <div className="p-12 text-center text-slate-400 text-sm">
+              <div className="p-8 sm:p-12 text-center text-slate-400 text-sm">
                 No advances have been logged for this project yet.
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-slate-100">
-                <table className="w-full border-collapse text-left text-xs" id="adv-ledger-table">
+              <div className="overflow-x-auto rounded-xl border border-slate-100 no-scrollbar">
+                <table className="w-full min-w-[550px] border-collapse text-left text-xs" id="adv-ledger-table">
                   <thead>
                     <tr className="bg-slate-50 text-slate-500 border-b border-slate-100 font-bold uppercase tracking-wider text-[10px]">
                       <th className="px-4 py-3">Date</th>

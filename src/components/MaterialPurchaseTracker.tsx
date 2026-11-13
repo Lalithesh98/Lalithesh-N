@@ -313,17 +313,17 @@ export default function MaterialPurchaseTracker({
     <div id="material-purchase-container" className="space-y-6">
       
       {/* Top informational rail */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 border border-slate-100 rounded-2xl shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-5 border border-slate-100 rounded-2xl shadow-sm">
         <div className="space-y-1">
           <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">Material Purchases Log</h2>
           <p className="text-xs text-slate-400">Track structural purchases including concrete sand, steel rebars, cement, plumb assets, paints and hardware.</p>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="text-right">
+        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-0 border-slate-100">
+          <div className="text-left sm:text-right">
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Material Spending</span>
-            <span className="text-lg font-black text-slate-800 flex items-center justify-end">
-              <IndianRupee className="w-4.5 h-4.5 mr-0.5 text-slate-500" />
+            <span className="text-base sm:text-lg font-black text-slate-800 flex items-center sm:justify-end">
+              <IndianRupee className="w-4 sm:w-4.5 h-4 sm:h-4.5 mr-0.5 text-slate-500" />
               {totalSpentMat.toLocaleString('en-IN')}
             </span>
           </div>
@@ -335,7 +335,7 @@ export default function MaterialPurchaseTracker({
                  resetForm();
                  setIsFormOpen(true);
                }}
-               className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition-colors cursor-pointer select-none"
+               className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs transition-colors cursor-pointer select-none"
             >
               <PlusCircle className="w-4 h-4" /> Log Purchase
             </button>
@@ -345,7 +345,7 @@ export default function MaterialPurchaseTracker({
 
       {/* Barbending Labor Tracker Box */}
       {activeProject && barbendingPurchases.length > 0 && (
-        <div id="barbending-summary-card" className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl p-5 border border-indigo-500/30 shadow-md space-y-3.5 relative overflow-hidden">
+        <div id="barbending-summary-card" className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl p-4 sm:p-5 border border-indigo-500/30 shadow-md space-y-3.5 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-8 opacity-[0.03] select-none pointer-events-none">
             <Layers className="w-24 h-24 text-white" />
           </div>
@@ -359,25 +359,25 @@ export default function MaterialPurchaseTracker({
             </span>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-1">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 pt-1">
             <div className="space-y-0.5">
               <span className="text-[10px] text-indigo-200/80 block uppercase font-bold tracking-wider">Total Length Work</span>
-              <span className="text-lg font-black tracking-tight flex items-baseline">
+              <span className="text-base sm:text-lg font-black tracking-tight flex items-baseline">
                 {totalBarbFeet.toLocaleString('en-IN')} 
                 <span className="text-xs font-semibold text-indigo-300 ml-1">Feet</span>
               </span>
             </div>
             <div className="space-y-0.5">
               <span className="text-[10px] text-indigo-200/80 block uppercase font-bold tracking-wider">Total Charged Value</span>
-              <span className="text-lg font-black tracking-tight text-amber-300">₹{totalBarbCost.toLocaleString('en-IN')}</span>
+              <span className="text-base sm:text-lg font-black tracking-tight text-amber-300">₹{totalBarbCost.toLocaleString('en-IN')}</span>
             </div>
             <div className="space-y-0.5">
               <span className="text-[10px] text-indigo-200/80 block uppercase font-bold tracking-wider">Disbursed (Paid)</span>
-              <span className="text-lg font-black tracking-tight text-emerald-400">₹{totalBarbPaid.toLocaleString('en-IN')}</span>
+              <span className="text-base sm:text-lg font-black tracking-tight text-emerald-400">₹{totalBarbPaid.toLocaleString('en-IN')}</span>
             </div>
             <div className="space-y-0.5">
               <span className="text-[10px] text-indigo-200/80 block uppercase font-bold tracking-wider font-extrabold text-orange-200">Pending (In Credit)</span>
-              <span className="text-lg font-black tracking-tight text-rose-400">₹{totalBarbCredit.toLocaleString('en-IN')}</span>
+              <span className="text-base sm:text-lg font-black tracking-tight text-rose-400">₹{totalBarbCredit.toLocaleString('en-IN')}</span>
             </div>
           </div>
         </div>

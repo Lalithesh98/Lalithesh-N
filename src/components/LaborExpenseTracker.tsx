@@ -81,17 +81,17 @@ export default function LaborExpenseTracker({
     <div id="labor-expense-container" className="space-y-6">
       
       {/* Informational banner */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 border border-slate-100 rounded-2xl shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-5 border border-slate-100 rounded-2xl shadow-sm">
         <div className="space-y-1">
           <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">Labor Wage Disbursements</h2>
           <p className="text-xs text-slate-400">Track and authorize daily labor disbursements paid on site{activeProject?.assignedMestriName ? ` by ${activeProject.assignedMestriName}` : ''}.</p>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="text-right">
+        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-0 border-slate-100">
+          <div className="text-left sm:text-right">
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Total Paid Wages</span>
-            <span className="text-lg font-black text-slate-800 flex items-center justify-end">
-              <IndianRupee className="w-4.5 h-4.5 mr-0.5 text-slate-500" />
+            <span className="text-base sm:text-lg font-black text-slate-800 flex items-center sm:justify-end">
+              <IndianRupee className="w-4 sm:w-4.5 h-4 sm:h-4.5 mr-0.5 text-slate-500" />
               {totalLaborWage.toLocaleString('en-IN')}
             </span>
           </div>
@@ -103,7 +103,7 @@ export default function LaborExpenseTracker({
                 resetForm();
                 setIsFormOpen(true);
               }}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition-colors cursor-pointer select-none"
+              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs transition-colors cursor-pointer select-none"
             >
               <PlusCircle className="w-4 h-4" /> Add Labor Worksheet
             </button>
@@ -266,19 +266,19 @@ export default function LaborExpenseTracker({
           )}
 
           {/* Table display matching active project (Column 2/3) */}
-          <div className={`${isFormOpen && canEdit ? 'xl:col-span-2' : 'xl:col-span-3'} bg-white border border-slate-100 rounded-2xl p-5 shadow-sm space-y-4`}>
+          <div className={`${isFormOpen && canEdit ? 'xl:col-span-2' : 'xl:col-span-3'} bg-white border border-slate-100 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4`}>
             <div className="space-y-1">
               <h3 className="font-extrabold text-slate-800 text-base">Recorded Wage Sheets</h3>
               <p className="text-xs text-slate-400">Detailed wages ledger showing total active workers, daily payouts, and registered tasks on {activeProject.projectName}.</p>
             </div>
 
             {filteredLabor.length === 0 ? (
-              <div className="p-12 text-center text-slate-400 text-sm">
+              <div className="p-8 sm:p-12 text-center text-slate-400 text-sm">
                 No labor worksheets have been logged for this project yet.
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-slate-100">
-                <table className="w-full border-collapse text-left text-xs" id="labor-worksheet-table">
+              <div className="overflow-x-auto rounded-xl border border-slate-100 no-scrollbar">
+                <table className="w-full min-w-[640px] border-collapse text-left text-xs" id="labor-worksheet-table">
                   <thead>
                     <tr className="bg-slate-50 text-slate-500 border-b border-slate-100 font-bold uppercase tracking-wider text-[10px]">
                       <th className="px-4 py-3">Date</th>

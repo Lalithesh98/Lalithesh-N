@@ -124,7 +124,7 @@ export default function ProjectManager({
   return (
     <div id="project-manager-container" className="space-y-6">
       {/* Top action bar */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 border border-slate-100 rounded-2xl shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-5 border border-slate-100 rounded-2xl shadow-sm">
         <div className="space-y-1">
           <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">Project Sites Portfolio</h2>
           <p className="text-xs text-slate-400">Add, monitor and allocate operational budgets for your construction projects.</p>
@@ -134,7 +134,7 @@ export default function ProjectManager({
           <button
             id="register-project-btn"
             onClick={handleCreateClick}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition-colors cursor-pointer select-none"
+            className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs transition-colors cursor-pointer select-none self-stretch sm:self-auto justify-center"
           >
             <PlusCircle className="w-4 h-4" /> Add Construct Site
           </button>

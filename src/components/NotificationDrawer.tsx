@@ -42,13 +42,13 @@ export default function NotificationDrawer({
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col border-l border-slate-200"
+            className="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col border-l border-slate-200 pt-safe pb-safe"
           >
             {/* Header */}
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-900 text-white">
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-900 text-white">
               <div className="flex items-center gap-2">
                 <Bell className="w-5 h-5 text-amber-500" />
-                <h3 className="font-semibold text-lg">System Notifications</h3>
+                <h3 className="font-semibold text-base sm:text-lg">System Notifications</h3>
                 {unreadCount > 0 && (
                   <span className="bg-amber-500 text-slate-900 text-xs font-bold px-2 py-0.5 rounded-full">
                     {unreadCount} New
@@ -58,7 +58,7 @@ export default function NotificationDrawer({
               <button
                 id="close-notif-btn"
                 onClick={onClose}
-                className="p-1.5 hover:bg-slate-800 rounded-lg transition-colors text-slate-300 hover:text-white"
+                className="p-1.5 hover:bg-slate-800 rounded-lg transition-colors text-slate-300 hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>

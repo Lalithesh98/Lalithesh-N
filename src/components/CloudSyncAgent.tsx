@@ -77,29 +77,29 @@ export const CloudSyncAgent: React.FC<CloudSyncAgentProps> = ({ onStateRestored 
 
   if (status === 'connecting') {
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 text-[11px] font-semibold">
+      <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 text-[10px] sm:text-[11px] font-semibold shrink-0">
         <RefreshCw className="h-3.5 w-3.5 animate-spin text-emerald-400" />
-        <span>Connecting Supabase...</span>
+        <span className="hidden sm:inline">Connecting Supabase...</span>
       </div>
     );
   }
 
   if (status === 'offline') {
     return (
-      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-500 text-[11px] font-semibold border border-slate-200">
+      <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl bg-slate-100 text-slate-500 text-[10px] sm:text-[11px] font-semibold border border-slate-200 shrink-0">
         <CloudOff className="h-3.5 w-3.5 text-slate-400" />
-        <span>Offline Mode</span>
+        <span className="hidden sm:inline">Offline Mode</span>
       </div>
     );
   }
 
   return (
     <div
-      className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold select-none"
+      className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] sm:text-[11px] font-bold select-none shrink-0"
       title={lastEventTime ? `Last live update at ${lastEventTime}` : 'Connected to Supabase PostgreSQL'}
     >
       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-      <Database className="h-3.5 w-3.5 text-emerald-600" />
+      <Database className="h-3.5 w-3.5 text-emerald-600 hidden sm:inline" />
       <span className="hidden sm:inline">Supabase Live</span>
       <Cloud className="h-3.5 w-3.5 text-emerald-600 sm:hidden" />
     </div>

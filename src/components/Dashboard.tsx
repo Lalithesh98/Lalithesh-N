@@ -164,30 +164,30 @@ export default function Dashboard({
   });
 
   return (
-    <div id="dashboard-container" className="space-y-8">
+    <div id="dashboard-container" className="space-y-6 sm:space-y-8">
       {/* Upper Selector Panel */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 bg-white border border-slate-100 rounded-2xl shadow-sm">
-        <div className="space-y-1">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 sm:p-5 bg-white border border-slate-100 rounded-2xl shadow-sm">
+        <div className="space-y-1.5 min-w-0">
           <div className="flex items-center gap-2 text-slate-500 font-semibold text-xs uppercase tracking-wider">
-            <Building2 className="w-4 h-4 text-emerald-600" />
+            <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>Active Project Dashboard</span>
           </div>
-          <h2 className="text-2xl font-bold text-slate-850 tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-850 tracking-tight break-words">
             {activeProject.projectName}
           </h2>
-          <p className="text-slate-500 text-sm flex items-center gap-4 font-sans">
-            <span className="flex items-center gap-1">
-              <Calendar className="w-4 h-4 text-slate-400" /> Timeline: {activeProject.startDate} to {activeProject.expectedEndDate}
+          <div className="text-slate-500 text-xs sm:text-sm flex flex-wrap items-center gap-x-4 gap-y-1 font-sans">
+            <span className="flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 shrink-0" /> Timeline: {activeProject.startDate} to {activeProject.expectedEndDate}
             </span>
-            <span className="flex items-center gap-1">
-              <UserIcon className="w-4 h-4 text-slate-400" /> Client: {activeProject.clientName}
+            <span className="flex items-center gap-1.5">
+              <UserIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 shrink-0" /> Client: {activeProject.clientName}
             </span>
-          </p>
+          </div>
         </div>
 
         {/* Quick Swapper Dropdown */}
-        <div className="flex items-center gap-2">
-          <label htmlFor="dashboard-proj-selector" className="text-slate-650 text-sm font-bold select-none">Switch Project:</label>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 w-full md:w-auto pt-2 md:pt-0 border-t border-slate-100 md:border-0">
+          <label htmlFor="dashboard-proj-selector" className="text-slate-500 text-xs sm:text-sm font-bold select-none shrink-0">Switch Project:</label>
           <select
             id="dashboard-proj-selector"
             value={pId}
@@ -195,7 +195,7 @@ export default function Dashboard({
               const proj = projects.find(p => p.id === e.target.value);
               if (proj) onChangeProject(proj);
             }}
-            className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none transition-colors cursor-pointer"
+            className="w-full md:w-auto px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-700 outline-none transition-colors cursor-pointer"
           >
             {projects.map((proj) => (
               <option key={proj.id} value={proj.id}>
@@ -207,22 +207,22 @@ export default function Dashboard({
       </div>
 
       {/* Main Stats Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Budget Card */}
-        <div id="stat-card-budget" className="stat-card border-blue-600 bg-white rounded-xl p-5 shadow-xs relative overflow-hidden flex flex-col justify-between transition-all hover:shadow-md">
+        <div id="stat-card-budget" className="stat-card border-blue-600 bg-white rounded-xl p-4 sm:p-5 shadow-xs relative overflow-hidden flex flex-col justify-between transition-all hover:shadow-md">
           <div className="flex items-start justify-between">
             <div className="space-y-1">
-              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Project Budget</span>
-              <h3 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center mono">
-                <IndianRupee className="w-5 h-5 text-slate-450 mr-0.5" />
+              <span className="text-[11px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">Project Budget</span>
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight flex items-center mono">
+                <IndianRupee className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-slate-450 mr-0.5" />
                 {totalBudget.toLocaleString('en-IN')}
               </h3>
             </div>
-            <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-600">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-blue-500/10 text-blue-600 shrink-0">
               <Building2 className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
+          <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
             <span className="text-slate-400">Status</span>
             <span className={`px-2 py-0.5 rounded-md ${
               activeProject.status === 'Active' ? 'bg-emerald-50 text-emerald-600' :
@@ -234,36 +234,36 @@ export default function Dashboard({
         </div>
 
         {/* Total Advances Issued Card */}
-        <div id="stat-card-advance" className="stat-card border-emerald-500 bg-white rounded-xl p-5 shadow-xs relative overflow-hidden flex flex-col justify-between transition-all hover:shadow-md">
+        <div id="stat-card-advance" className="stat-card border-emerald-500 bg-white rounded-xl p-4 sm:p-5 shadow-xs relative overflow-hidden flex flex-col justify-between transition-all hover:shadow-md">
           <div className="flex items-start justify-between">
             <div className="space-y-1">
-              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Issued Advances</span>
-              <h3 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center mono">
-                <IndianRupee className="w-5 h-5 text-slate-450 mr-0.5" />
+              <span className="text-[11px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">Issued Advances</span>
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight flex items-center mono">
+                <IndianRupee className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-slate-450 mr-0.5" />
                 {totalAdvances.toLocaleString('en-IN')}
               </h3>
             </div>
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 shrink-0">
               <Wallet className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
+          <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
             <span className="text-slate-400">Allocated Batches</span>
             <span className="text-slate-700 font-bold">{projectAdvances.length} Payments</span>
           </div>
         </div>
 
         {/* Total Expenses Card */}
-        <div id="stat-card-expenses" className="stat-card border-orange-500 bg-white rounded-xl p-5 shadow-xs relative overflow-hidden flex flex-col justify-between transition-all hover:shadow-md">
+        <div id="stat-card-expenses" className="stat-card border-orange-500 bg-white rounded-xl p-4 sm:p-5 shadow-xs relative overflow-hidden flex flex-col justify-between transition-all hover:shadow-md">
           <div className="flex items-start justify-between">
             <div className="space-y-1">
-              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Expenses Debited</span>
-              <h3 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center mono">
-                <IndianRupee className="w-5 h-5 text-slate-450 mr-0.5" />
+              <span className="text-[11px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">Expenses Debited</span>
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight flex items-center mono">
+                <IndianRupee className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-slate-450 mr-0.5" />
                 {totalSpent.toLocaleString('en-IN')}
               </h3>
             </div>
-            <div className="p-2.5 rounded-xl bg-orange-500/10 text-orange-600">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-orange-500/10 text-orange-600 shrink-0">
               <Layers className="w-5 h-5" />
             </div>
           </div>
@@ -288,20 +288,20 @@ export default function Dashboard({
         </div>
 
         {/* Remaining Budget vs Advances Alert Card */}
-        <div id="stat-card-balance" className="stat-card border-slate-300 bg-white rounded-xl p-5 shadow-xs relative overflow-hidden flex flex-col justify-between transition-all hover:shadow-md">
+        <div id="stat-card-balance" className="stat-card border-slate-300 bg-white rounded-xl p-4 sm:p-5 shadow-xs relative overflow-hidden flex flex-col justify-between transition-all hover:shadow-md">
           <div className="flex items-start justify-between">
             <div className="space-y-1">
-              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Remaining Budget</span>
-              <h3 className={`text-2xl font-bold tracking-tight flex items-center mono ${remainingBudget < 0 ? 'text-red-650' : 'text-slate-700'}`}>
-                <IndianRupee className="w-5 h-5 text-slate-450 mr-0.5" />
+              <span className="text-[11px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">Remaining Budget</span>
+              <h3 className={`text-xl sm:text-2xl font-bold tracking-tight flex items-center mono ${remainingBudget < 0 ? 'text-red-650' : 'text-slate-700'}`}>
+                <IndianRupee className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-slate-450 mr-0.5" />
                 {remainingBudget.toLocaleString('en-IN')}
               </h3>
             </div>
-            <div className="p-2.5 rounded-xl bg-slate-100 text-slate-500">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-slate-100 text-slate-500 shrink-0">
               <TrendingUp className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
+          <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
             <span className="text-slate-400">Available Balance</span>
             <span className={`${remainingBudget < 0 ? 'text-red-500 font-bold' : 'text-slate-500 font-bold'}`}>
               {remainingBudget < 0 ? 'Overspent' : 'Under Budget'}
@@ -311,28 +311,28 @@ export default function Dashboard({
       </div>
 
       {/* Reconciliation Callout & Advance Balance indicator */}
-      <div className={`p-5 rounded-2xl border flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ${
+      <div className={`p-4 sm:p-5 rounded-2xl border flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ${
         remainingAdvance < 10000 ? 'bg-red-50/50 border-red-100' : 'bg-slate-50 border-slate-100'
       }`}>
         <div className="space-y-1">
-          <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Mestri Workspace Reconciliation</h4>
-          <p className="text-xs text-slate-500 max-w-xl">
+          <h4 className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider">Mestri Workspace Reconciliation</h4>
+          <p className="text-xs text-slate-500 max-w-xl leading-relaxed">
             This compares the sum of advances given to the Site supervisor (₹{totalAdvances.toLocaleString('en-IN')}) against itemized bills recorded on the site (₹{totalSpent.toLocaleString('en-IN')}).
             <span className="text-emerald-700 font-extrabold block mt-1">
               💡 Outstanding credit purchases of ₹{totalSpentCredit.toLocaleString('en-IN')} are excluded from cash deductions to keep your actual cash-in-hand accurate!
             </span>
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <div className="text-xs text-slate-400 font-semibold uppercase">Mestri Advance Balance</div>
-            <div className={`text-xl font-extrabold flex items-center justify-end ${remainingAdvance < 10000 ? 'text-red-600' : 'text-slate-800'}`}>
+        <div className="flex items-center justify-between w-full md:w-auto gap-4 pt-2 md:pt-0 border-t md:border-0 border-slate-200/50">
+          <div className="text-left md:text-right">
+            <div className="text-[10px] sm:text-xs text-slate-400 font-semibold uppercase">Mestri Advance Balance</div>
+            <div className={`text-lg sm:text-xl font-extrabold flex items-center ${remainingAdvance < 10000 ? 'text-red-600' : 'text-slate-800'}`}>
               <IndianRupee className="w-4 h-4 mr-0.5" />
               {remainingAdvance.toLocaleString('en-IN')}
             </div>
           </div>
           {remainingAdvance < 10000 && (
-            <div className="bg-red-100 text-red-600 px-3 py-1.5 rounded-xl text-xs font-bold leading-none flex items-center gap-1.5 animate-pulse">
+            <div className="bg-red-100 text-red-600 px-2.5 py-1.5 rounded-xl text-xs font-bold leading-none flex items-center gap-1.5 animate-pulse shrink-0">
               <AlertTriangle className="w-3.5 h-3.5" /> Low Advance
             </div>
           )}
@@ -340,9 +340,9 @@ export default function Dashboard({
       </div>
 
       {/* Analytics Graphs Visual grids */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
         {/* Graphic 1: Expense Breakdown Ring (Doughnut) */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col justify-between">
           <div className="space-y-1 mb-4">
             <h4 className="font-bold text-slate-800 text-base">Expense Breakdown</h4>
             <p className="text-xs text-slate-400">Comparative split between materials, labor and local site utility voucher payouts.</p>
@@ -354,7 +354,7 @@ export default function Dashboard({
               There are no expenses logged on this project yet.
             </div>
           ) : (
-            <div className="flex flex-col sm:flex-row items-center justify-around gap-6 h-64">
+            <div className="flex flex-col sm:flex-row items-center justify-around gap-4 sm:gap-6 py-2">
               {/* Custom interactive SVG Doughnut */}
               <div className="relative w-44 h-44 flex-shrink-0">
                 <svg viewBox="0 0 200 200" className="w-full h-full transform -rotate-90">
@@ -421,13 +421,13 @@ export default function Dashboard({
         </div>
 
         {/* Graphic 2: Material-wise Spending Breakdown */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
-          <div className="space-y-1 mb-4 flex justify-between items-start">
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col justify-between">
+          <div className="space-y-1 mb-4 flex flex-wrap justify-between items-start gap-2">
             <div>
               <h4 className="font-bold text-slate-800 text-base">Material Payout Split</h4>
               <p className="text-xs text-slate-400">Total expenditure breakdown by structural material categories.</p>
             </div>
-            <span className="text-xs font-bold px-2.5 py-1 bg-amber-50 text-amber-600 rounded-full">
+            <span className="text-xs font-bold px-2.5 py-1 bg-amber-50 text-amber-600 rounded-full shrink-0">
               🧱 {projectPurchases.length} Purchases
             </span>
           </div>
@@ -468,13 +468,13 @@ export default function Dashboard({
       </div>
 
       {/* Labor type stats panel */}
-      <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+      <div className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-6">
           <div className="space-y-1">
             <h4 className="font-bold text-slate-800 text-base">Site Labor Workforce Payouts</h4>
             <p className="text-xs text-slate-400">Wage analysis across masonry, carpentry, helper, electrical, mechanical and painting domains.</p>
           </div>
-          <div className="text-right">
+          <div className="text-left sm:text-right pt-2 sm:pt-0 border-t sm:border-0 border-slate-100">
             <div className="text-[10px] text-slate-400 uppercase font-black tracking-wider">Total Wage Debit</div>
             <div className="text-lg font-black text-slate-800">₹{totalLaborCost.toLocaleString('en-IN')}</div>
           </div>
@@ -485,7 +485,7 @@ export default function Dashboard({
             No Labor payments registered on this week's worksheets.
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
             {Array.from(new Set(projectLabor.map(l => l.workerType))).map(workerType => {
               const matches = projectLabor.filter(l => l.workerType === workerType);
               const workerWage = matches.reduce((sum, l) => sum + l.totalWage, 0);

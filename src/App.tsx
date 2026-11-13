@@ -417,31 +417,31 @@ export default function App() {
   // Secure Login Gate
   if (!sessionUser) {
     return (
-      <div className="min-h-screen bg-slate-100 flex flex-col justify-center items-center p-4 font-sans selection:bg-emerald-100 selection:text-emerald-800">
-        <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200/50">
+      <div className="min-h-screen bg-slate-100 flex flex-col justify-center items-center p-3 sm:p-4 pt-safe pb-safe font-sans selection:bg-emerald-100 selection:text-emerald-800">
+        <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-slate-200/50">
           
           {/* Aesthetic info column with geometric/construction outline */}
-          <div className="bg-slate-900 p-8 md:p-12 text-white flex flex-col justify-between relative overflow-hidden">
+          <div className="bg-slate-900 p-6 sm:p-8 md:p-12 text-white flex flex-col justify-between relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-600/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
             <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-600/10 rounded-full blur-2xl -ml-16 -mb-16"></div>
             
             {/* Header Branding */}
             <div className="flex items-center gap-3 relative z-10">
-              <div className="p-2.5 bg-emerald-600 rounded-2xl text-white shadow-lg shadow-emerald-600/20">
-                <Building2 className="w-7 h-7" />
+              <div className="p-2 sm:p-2.5 bg-emerald-600 rounded-2xl text-white shadow-lg shadow-emerald-600/20">
+                <Building2 className="w-6 h-6 sm:w-7 sm:h-7" />
               </div>
               <div>
-                <h1 className="text-base font-extrabold tracking-tight uppercase">LV Constructions</h1>
+                <h1 className="text-sm sm:text-base font-extrabold tracking-tight uppercase">LV Constructions</h1>
                 <p className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-widest leading-none">Budget & Expense Management</p>
               </div>
             </div>
 
             {/* Core Message / Mission of CMS */}
-            <div className="space-y-6 my-12 relative z-10">
+            <div className="space-y-4 sm:space-y-6 my-6 sm:my-12 relative z-10">
               <span className="px-3 py-1 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold rounded-full text-[10px] uppercase tracking-wider inline-block">
                 LV Constructions Active System
               </span>
-              <h2 className="text-3xl font-extrabold tracking-tight leading-tight">
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight">
                 Budget & Expense Management
               </h2>
               <p className="text-slate-400 text-xs leading-relaxed">
@@ -472,9 +472,9 @@ export default function App() {
           </div>
 
           {/* Actual Login Interactive Form column */}
-          <div className="p-8 md:p-12 flex flex-col justify-center space-y-6 bg-white">
+          <div className="p-6 sm:p-8 md:p-12 flex flex-col justify-center space-y-5 sm:space-y-6 bg-white">
             <div className="space-y-2">
-              <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Supervisor Portal Access</h3>
+              <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Supervisor Portal Access</h3>
               <p className="text-slate-500 text-xs leading-relaxed">Select an active account from the database below or enter your username/email and password.</p>
             </div>
 
@@ -604,18 +604,20 @@ export default function App() {
     <div className="min-h-screen bg-slate-100 text-slate-800 selection:bg-emerald-100 selection:text-emerald-800 flex flex-col font-sans">
       
       {/* Simulation Persona Bar at Top (Admin only) */}
-      <div className="bg-slate-900 border-b border-slate-800 text-white p-3 py-2 px-4 flex flex-col md:flex-row justify-between items-center gap-3 no-print">
+      <div className="bg-slate-900 border-b border-slate-800 text-white pt-safe pb-2 px-3 sm:px-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-2 sm:gap-3 no-print">
         {canSimulateRoles ? (
-          <div className="flex items-center gap-2 flex-wrap">
-            <Sliders className="w-4 h-4 text-emerald-500 animate-spin-slow" />
-            <span className="text-[10px] uppercase font-black tracking-widest text-slate-400">Role Preview:</span>
-            <div className="flex gap-1.5 flex-wrap">
+          <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto no-scrollbar py-0.5">
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Sliders className="w-3.5 h-3.5 text-emerald-500 animate-spin-slow shrink-0" />
+              <span className="text-[10px] uppercase font-black tracking-widest text-slate-400 shrink-0">Role Preview:</span>
+            </div>
+            <div className="flex gap-1.5 flex-nowrap sm:flex-wrap items-center overflow-x-auto no-scrollbar">
               {roles.map(r => (
                 <button
                   id={`switch-role-btn-${r.name.toLowerCase()}`}
                   key={r.id}
                   onClick={() => handleRoleSwitch(r.name)}
-                  className={`px-3 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] font-black rounded-lg uppercase tracking-wider transition-all cursor-pointer ${
+                  className={`px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-[9px] sm:text-[10px] font-black rounded-lg uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                     currentUserRole.toLowerCase() === r.name.toLowerCase()
                       ? 'border border-emerald-500 text-emerald-400 bg-emerald-500/10'
                       : 'border border-transparent text-slate-300'
@@ -633,7 +635,7 @@ export default function App() {
                   const target = users.find(u => u.id === e.target.value);
                   if (target) handleRoleSwitch(target.role, target.id);
                 }}
-                className="ml-1 px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-lg text-[10px] font-bold text-slate-200 outline-none cursor-pointer"
+                className="ml-auto sm:ml-1 px-2 py-1 bg-slate-800 border border-slate-700 rounded-lg text-[9px] sm:text-[10px] font-bold text-slate-200 outline-none cursor-pointer shrink-0 max-w-[150px] truncate"
               >
                 {users.map(u => (
                   <option key={u.id} value={u.id}>
@@ -645,15 +647,16 @@ export default function App() {
           </div>
         ) : (
           <div className="flex items-center gap-2 text-[10px] uppercase font-black tracking-widest text-slate-400">
-            <Building2 className="w-4 h-4 text-emerald-500" />
-            <span>LV Constructions • Supabase Cloud Session</span>
+            <Building2 className="w-4 h-4 text-emerald-500 shrink-0" />
+            <span className="truncate">LV Constructions • Supabase Cloud Session</span>
           </div>
         )}
 
-        <div className="flex items-center gap-4 text-xs font-semibold text-slate-350">
-          <p className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
-            Authenticated As: <strong className="text-white font-bold">{activeUser.name} ({activeUser.role})</strong>
+        <div className="flex items-center gap-2 text-[10px] sm:text-xs font-semibold text-slate-350 shrink-0 w-full sm:w-auto justify-between sm:justify-end border-t border-slate-800/60 sm:border-0 pt-1.5 sm:pt-0">
+          <p className="flex items-center gap-1.5 truncate">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse shrink-0"></span>
+            <span className="text-slate-400 font-medium">Active:</span>
+            <strong className="text-white font-bold truncate">{activeUser.name} ({activeUser.role})</strong>
           </p>
         </div>
       </div>
@@ -671,7 +674,7 @@ export default function App() {
         )}
 
         {/* Left Side Utility Navigation Drawer (Web Dashboard) - Slate-900 Professional Polish style */}
-        <div className={`fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-white border-r border-slate-950 p-6 flex flex-col justify-between no-print gap-6 shadow-xl transition-transform duration-300 ease-in-out lg:static lg:w-64 lg:translate-x-0 ${
+        <div className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-slate-900 text-white border-r border-slate-950 p-5 sm:p-6 flex flex-col justify-between no-print gap-6 shadow-xl transition-transform duration-300 ease-in-out lg:static lg:w-64 lg:translate-x-0 overflow-y-auto no-scrollbar pt-safe pb-safe ${
           isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}>
           <div className="space-y-6">
@@ -813,39 +816,46 @@ export default function App() {
         </div>
 
         {/* Right workspace core body */}
-        <main className="flex-1 p-6 lg:p-8 space-y-6 max-w-full overflow-hidden">
+        {/* Right workspace core body */}
+        <main className="flex-1 p-3 sm:p-5 lg:p-8 space-y-4 sm:space-y-6 max-w-full min-w-0 overflow-x-hidden">
           
           {/* Central Control bar header */}
-          <header className="flex justify-between items-center bg-white p-4.5 px-6 border border-slate-200 rounded-2xl shadow-sm no-print">
-            <div className="flex items-center gap-3.5">
+          <header className="flex justify-between items-center bg-white p-3 sm:p-4 lg:px-6 border border-slate-200 rounded-2xl shadow-sm no-print gap-2">
+            <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">
               <button
                 id="mobile-sidebar-hamburger"
                 onClick={() => setIsMobileSidebarOpen(true)}
-                className="lg:hidden p-2.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-605 rounded-xl transition-colors cursor-pointer flex items-center justify-center mr-0.5"
+                className="lg:hidden p-2 sm:p-2.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl transition-colors cursor-pointer flex items-center justify-center shrink-0"
                 title="Open Navigation"
               >
-                <Menu className="w-4.5 h-4.5 text-slate-600" />
+                <Menu className="w-5 h-5 text-slate-700" />
               </button>
 
-              <div className="space-y-0.5">
-                <h2 className="text-base font-extrabold text-slate-900 tracking-tight">Active Terminal Panel</h2>
-                <p className="text-xs text-slate-500 hidden md:block">Manage, review, print and run compliance filters on project data pipelines.</p>
-                <p className="text-xs text-slate-500 md:hidden">LV Site Control Center Panels.</p>
+              <div className="min-w-0 space-y-0.5">
+                <h2 className="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight truncate">
+                  Active Terminal Panel
+                </h2>
+                <p className="text-xs text-slate-500 hidden md:block truncate">
+                  Manage, review, print and run compliance filters on project data pipelines.
+                </p>
+                <p className="text-[10px] text-slate-400 font-semibold md:hidden truncate">
+                  LV Site Control Center
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3.5">
+            <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
               
               {/* Trigger Notification icon */}
               <div className="relative">
                 <button
                   id="header-notif-btn"
                   onClick={() => setIsNotifOpen(!isNotifOpen)}
-                  className="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl relative text-slate-600 border border-slate-150 transition-colors cursor-pointer"
+                  className="p-2 sm:p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl relative text-slate-600 border border-slate-150 transition-colors cursor-pointer flex items-center justify-center"
                 >
-                  <Bell className="w-5 h-5" />
+                  <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
                   {unreadNotifs.length > 0 && (
-                    <span id="unread-notifs-badge" className="absolute -top-1 -right-1 bg-red-500 text-white w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center animate-bounce">
+                    <span id="unread-notifs-badge" className="absolute -top-1 -right-1 bg-red-500 text-white w-4 h-4 sm:w-5 sm:h-5 rounded-full text-[8px] sm:text-[9px] font-black flex items-center justify-center animate-bounce">
                       {unreadNotifs.length}
                     </span>
                   )}
@@ -872,11 +882,11 @@ export default function App() {
                 <button
                   id="header-security-btn"
                   onClick={() => setIsSecurityModalOpen(true)}
-                  className="px-3.5 py-2.5 bg-amber-50 border border-amber-200 hover:border-amber-300 text-amber-800 hover:text-amber-900 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                  className="p-2 sm:px-3 sm:py-2.5 bg-amber-50 border border-amber-200 hover:border-amber-300 text-amber-800 hover:text-amber-900 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
                   title="🔑 Credentials Security Panel"
                 >
                   <Lock className="w-4 h-4 text-amber-600" />
-                  <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">Credentials Shield</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider hidden md:inline">Credentials Shield</span>
                 </button>
               )}
 
@@ -884,10 +894,10 @@ export default function App() {
               <button
                 id="header-data-refresh-btn"
                 onClick={() => loadDatabaseState()}
-                className="p-2.5 bg-slate-50 border border-slate-150 hover:bg-slate-100 text-slate-600 rounded-xl transition-colors cursor-pointer"
+                className="p-2 sm:p-2.5 bg-slate-50 border border-slate-150 hover:bg-slate-100 text-slate-600 rounded-xl transition-colors cursor-pointer flex items-center justify-center"
                 title="Synchronize Databases State"
               >
-                <RefreshCw className="w-5 h-5" />
+                <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
 
             </div>
@@ -1097,8 +1107,8 @@ export default function App() {
 
       {/* Security Credentials Shield Modal */}
       {isSecurityModalOpen && (
-        <div id="security-admin-modal" className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-xl w-full max-h-[92vh] overflow-y-auto p-6 md:p-8 space-y-6 animate-in zoom-in-95 duration-150">
+        <div id="security-admin-modal" className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 max-w-xl w-full max-h-[92vh] overflow-y-auto p-4 sm:p-6 md:p-8 space-y-5 sm:space-y-6 animate-in zoom-in-95 duration-150">
             
             {/* Modal Header */}
             <div className="flex justify-between items-start border-b border-slate-100 pb-4">

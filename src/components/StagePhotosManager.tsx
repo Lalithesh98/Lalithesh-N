@@ -331,24 +331,24 @@ export default function StagePhotosManager({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         
         {/* Core title banner */}
-        <div className="lg:col-span-2 bg-gradient-to-br from-slate-900 to-slate-850 p-6 rounded-3xl border border-slate-800 text-white flex flex-col justify-between space-y-4">
+        <div className="lg:col-span-2 bg-gradient-to-br from-slate-900 to-slate-850 p-4 sm:p-6 rounded-3xl border border-slate-800 text-white flex flex-col justify-between space-y-4">
           <div className="space-y-2">
             <span className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-extrabold uppercase rounded-full text-[9px] tracking-widest inline-flex items-center gap-1.5 leading-none">
               <Sparkles className="w-3 h-3 text-emerald-400" /> Stage-Wise Visual Audits
             </span>
-            <h2 className="text-2xl font-extrabold tracking-tight">Construction Development Timeline</h2>
+            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight">Construction Development Timeline</h2>
             <p className="text-slate-400 text-xs leading-relaxed max-w-xl">
               Chronologically archive actual photographic snapshots for each key milestone. Maintains an indisputable visual record for proprietors and architectural compliance.
             </p>
           </div>
 
           <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-10">
+            <div className="flex items-center gap-4 sm:gap-10 flex-wrap">
               <div>
                 <span className="text-[10px] text-slate-500 font-bold uppercase block tracking-wider leading-none">Selected Site</span>
-                <span className="text-xs font-extrabold text-slate-200 mt-1 block">{activeProject.projectName}</span>
+                <span className="text-xs font-extrabold text-slate-200 mt-1 block truncate max-w-[200px]">{activeProject.projectName}</span>
               </div>
-              <div className="h-6 w-px bg-slate-800"></div>
+              <div className="h-6 w-px bg-slate-800 hidden sm:block"></div>
               <div>
                 <span className="text-[10px] text-slate-500 font-bold uppercase block tracking-wider leading-none">Coded Status</span>
                 <span className="text-[10px] text-emerald-400 font-extrabold shadow-sm bg-emerald-500/10 border border-emerald-500/10 px-2 py-0.5 rounded-md mt-1 inline-block">
@@ -360,7 +360,7 @@ export default function StagePhotosManager({
         </div>
 
         {/* Circular Progress Gauge block */}
-        <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-xs flex flex-col justify-between relative overflow-hidden">
+        <div className="bg-white border border-slate-100 rounded-3xl p-4 sm:p-6 shadow-xs flex flex-col justify-between relative overflow-hidden">
           <div className="flex justify-between items-start">
             <div className="space-y-1">
               <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Site Completion Est.</h4>

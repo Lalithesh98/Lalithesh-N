@@ -332,27 +332,27 @@ export default function AuditTrailViewer({
   return (
     <div id="audit-trail-container" className="space-y-6">
       {/* Top action header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 border border-slate-100 rounded-2xl shadow-sm print:hidden">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-5 border border-slate-100 rounded-2xl shadow-sm print:hidden">
         <div className="space-y-1">
           <h2 className="text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
-            <Lock className="w-5 h-5 text-amber-500 animate-spin-slow" /> Dynamic Roles, Users & Audit Control
+            <Lock className="w-5 h-5 text-amber-500 animate-spin-slow shrink-0" /> Dynamic Roles, Users & Audit Control
           </h2>
           <p className="text-xs text-slate-400">
             Configure custom roles, tab permissions, site-specific Mestris, user credentials, and audit histories.
           </p>
         </div>
 
-        <div className="p-1.5 px-3 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-xl text-xs font-black flex items-center gap-1">
+        <div className="p-1.5 px-3 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-xl text-xs font-black flex items-center gap-1 self-start sm:self-auto shrink-0">
           <Activity className="w-4 h-4 animate-pulse" /> {currentUserRole} Enclave
         </div>
       </div>
 
       {/* Subtab Segment Selector */}
-      <div className="flex border-b border-slate-200 gap-1 print:hidden overflow-x-auto">
+      <div className="flex border-b border-slate-200 gap-1 print:hidden overflow-x-auto no-scrollbar">
         <button
           id="tab-profile-log-btn"
           onClick={() => setSubTab('profile_log')}
-          className={`px-4 py-2.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+          className={`px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
             subTab === 'profile_log'
               ? 'border-indigo-600 text-indigo-700 bg-slate-50'
               : 'border-transparent text-slate-400 hover:text-slate-750'
@@ -364,7 +364,7 @@ export default function AuditTrailViewer({
         <button
           id="tab-audit-trail-btn"
           onClick={() => setSubTab('audit_trail')}
-          className={`px-4 py-2.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+          className={`px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             subTab === 'audit_trail'
               ? 'border-slate-800 text-slate-950 bg-slate-50'
               : 'border-transparent text-slate-400 hover:text-slate-750'
@@ -375,7 +375,7 @@ export default function AuditTrailViewer({
         <button
           id="tab-raise-invoice-btn"
           onClick={() => setSubTab('raise_invoice')}
-          className={`px-4 py-2.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+          className={`px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
             subTab === 'raise_invoice'
               ? 'border-emerald-600 text-emerald-700 bg-slate-50'
               : 'border-transparent text-slate-400 hover:text-slate-755'

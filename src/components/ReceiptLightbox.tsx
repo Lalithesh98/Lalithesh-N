@@ -29,28 +29,28 @@ export default function ReceiptLightbox({
   const rawRef = metadata.rawRef || {};
 
   return (
-    <div id="receipt-lightbox-overlay" className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in text-slate-850">
+    <div id="receipt-lightbox-overlay" className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-50 animate-fade-in text-slate-850">
       
       {/* Lightbox dialog container */}
-      <div className="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-lg w-full border border-slate-100 flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl max-w-lg w-full border border-slate-100 flex flex-col max-h-[92vh]">
         
         {/* Header bar */}
-        <div className="bg-slate-900 text-white p-4 flex justify-between items-center px-6">
-          <div className="space-y-0.5">
+        <div className="bg-slate-900 text-white p-3.5 sm:p-4 px-4 sm:px-6 flex justify-between items-center">
+          <div className="space-y-0.5 min-w-0 pr-2">
             <span className="text-[10px] text-amber-400 font-extrabold uppercase tracking-widest">Document Audit Scanner</span>
-            <h4 className="font-extrabold text-sm truncate max-w-[300px]">{title}</h4>
+            <h4 className="font-extrabold text-xs sm:text-sm truncate max-w-[220px] sm:max-w-[320px]">{title}</h4>
           </div>
           <button
             id="close-lightbox-top-btn"
             onClick={onClose}
-            className="p-1.5 bg-slate-800 text-slate-350 hover:bg-slate-700 hover:text-white rounded-xl transition-all cursor-pointer"
+            className="p-1.5 bg-slate-800 text-slate-350 hover:bg-slate-700 hover:text-white rounded-xl transition-all cursor-pointer shrink-0"
           >
             <X className="w-4.5 h-4.5" />
           </button>
         </div>
 
         {/* Content scrolling portal */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1 min-h-[400px] bg-slate-50/50">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-6 flex-1 min-h-[220px] sm:min-h-[350px] bg-slate-50/50">
 
           {isRealDataUri ? (
             /* Render actual uploaded image or document */
@@ -148,7 +148,7 @@ export default function ReceiptLightbox({
         </div>
 
         {/* Action Triggers footer */}
-        <div className="p-4 px-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 rounded-b-3xl">
+        <div className="p-3 sm:p-4 px-4 sm:px-6 bg-slate-50 border-t border-slate-100 flex flex-wrap sm:flex-nowrap justify-end gap-2 sm:gap-3 rounded-b-2xl sm:rounded-b-3xl">
           {billUrl && billUrl !== 'mock' && (
             <button
               id="download-scanned-bill-btn"
@@ -165,24 +165,24 @@ export default function ReceiptLightbox({
                 link.click();
                 document.body.removeChild(link);
               }}
-              className="flex items-center gap-1.5 px-4 md:px-4.5 py-2.5 bg-emerald-55 border border-emerald-250 text-emerald-800 hover:bg-emerald-100 font-bold rounded-xl text-xs transition-all cursor-pointer"
+              className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3.5 sm:px-4 py-2 sm:py-2.5 bg-emerald-55 border border-emerald-250 text-emerald-800 hover:bg-emerald-100 font-bold rounded-xl text-xs transition-all cursor-pointer"
             >
-              <Download className="w-4 h-4 text-emerald-600" /> Download Scan
+              <Download className="w-4 h-4 text-emerald-600" /> <span className="truncate">Download Scan</span>
             </button>
           )}
 
           <button
             id="print-single-bill-btn"
             onClick={() => window.print()}
-            className="flex items-center gap-1.5 px-4.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all cursor-pointer"
+            className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3.5 sm:px-4.5 py-2 sm:py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all cursor-pointer"
           >
-            <Printer className="w-4 h-4 text-slate-500" /> Print Slip
+            <Printer className="w-4 h-4 text-slate-500" /> <span className="truncate">Print Slip</span>
           </button>
           
           <button
             id="close-lightbox-footer-btn"
             onClick={onClose}
-            className="flex items-center gap-1.5 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition-all cursor-pointer select-none"
+            className="w-full sm:w-auto justify-center flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition-all cursor-pointer select-none"
           >
             Acknowledge View
           </button>

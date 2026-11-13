@@ -239,36 +239,36 @@ export default function TaxInvoiceGenerator({
     <div className="space-y-6">
       
       {/* Configuration Controls Bar - Hide when printing */}
-      <div className="bg-white p-5 border border-slate-100 rounded-3xl shadow-xs space-y-4 print:hidden">
+      <div className="bg-white p-4 sm:p-5 border border-slate-100 rounded-3xl shadow-xs space-y-4 print:hidden">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="space-y-1">
             <h3 className="font-extrabold text-slate-800 text-sm flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-amber-500" /> LV Tax Invoice Workdesk
+              <Sparkles className="w-5 h-5 text-amber-500 shrink-0" /> LV Tax Invoice Workdesk
             </h3>
             <p className="text-xs text-slate-400">
               Customize values below to dynamically generate a tax compliant invoice, compile totals, and render the print sheet.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <button
               onClick={handleResetToDefault}
-              className="p-2 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer"
+              className="flex-1 sm:flex-none justify-center p-2 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer"
               title="Reset workspace"
             >
-              <RefreshCcw className="w-4 h-4" /> Reset Template
+              <RefreshCcw className="w-4 h-4" /> Reset
             </button>
             
             <button
               onClick={handleSaveInvoice}
-              className="p-2 px-3 bg-slate-900 hover:bg-slate-950 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="flex-1 sm:flex-none justify-center p-2 px-3 bg-slate-900 hover:bg-slate-950 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
-              <Save className="w-4 h-4" /> Record Ledger entry
+              <Save className="w-4 h-4" /> Record Ledger
             </button>
 
             <button
               onClick={handleTriggerPrint}
-              className="p-2 px-4.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl flex items-center gap-1.5 cursor-pointer shadow-sm animate-pulse hover:animate-none"
+              className="w-full sm:w-auto justify-center p-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl flex items-center gap-1.5 cursor-pointer shadow-sm"
             >
               <Printer className="w-4 h-4" /> Print / Export PDF
             </button>
@@ -425,12 +425,13 @@ export default function TaxInvoiceGenerator({
       </div>
 
       {/* RENDER BOARD: TAX INVOICE matching user layout */}
-      <div 
-        id="tax-invoice-form-paper" 
-        className="mx-auto bg-white p-6 md:p-10 border border-slate-200 shadow-sm max-w-[800px] font-sans text-slate-850 print:border-none print:shadow-none print:p-0 select-text relative"
-      >
-        {/* Strict visual alignment layout */}
-        <div className="border-[1.85px] border-slate-900 w-full flex flex-col">
+      <div className="overflow-x-auto no-scrollbar -mx-3 sm:mx-0 p-1">
+        <div 
+          id="tax-invoice-form-paper" 
+          className="mx-auto bg-white p-4 sm:p-6 md:p-10 border border-slate-200 shadow-sm min-w-[650px] max-w-[800px] font-sans text-slate-850 print:border-none print:shadow-none print:p-0 print:min-w-0 select-text relative"
+        >
+          {/* Strict visual alignment layout */}
+          <div className="border-[1.85px] border-slate-900 w-full flex flex-col">
           
           {/* Tax Invoice Banner centered highlight */}
           <div className="bg-[#E4ECF4] border-b-[1.85px] border-slate-900 text-center py-1.5">
@@ -677,7 +678,7 @@ export default function TaxInvoiceGenerator({
           </div>
 
         </div>
-
+      </div>
       </div>
 
       {/* Raised Invoices Register list */}
