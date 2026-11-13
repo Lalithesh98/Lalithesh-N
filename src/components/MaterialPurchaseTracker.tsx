@@ -13,17 +13,23 @@ import {
   UploadCloud,
   FileCheck,
   IndianRupee,
-  Activity
+  Activity,
+  Sparkles,
+  RefreshCw,
+  CheckCircle2
 } from 'lucide-react';
 import { Project, MaterialPurchase, MaterialCategory, UserRole, PaymentStatus } from '../types';
+import appApi from '../api';
 
 interface MaterialPurchaseTrackerProps {
   activeProject: Project | null;
   purchases: MaterialPurchase[];
-  currentUserRole: UserRole;
+  currentUserRole: string;
+  canWrite?: boolean;
   currentUserName: string;
   onAddPurchase: (purchaseData: Partial<MaterialPurchase>) => Promise<void>;
   onDeletePurchase: (purchaseId: string) => Promise<void>;
+  onSettlePurchase?: (purchaseId: string, payAmount?: number) => Promise<void>;
   onPreviewBill: (billUrl: string) => void;
 }
 
@@ -31,9 +37,11 @@ export default function MaterialPurchaseTracker({
   activeProject,
   purchases,
   currentUserRole,
+  canWrite,
   currentUserName,
   onAddPurchase,
   onDeletePurchase,
+  onSettlePurchase,
   onPreviewBill,
 }: MaterialPurchaseTrackerProps) {
 
@@ -66,8 +74,45 @@ export default function MaterialPurchaseTracker({
   // Weight / Dimensions / Specs tracking
   const [weightKg, setWeightKg] = useState('');
   const [thicknessSpecs, setThicknessSpecs] = useState('');
+  const [isScanningAi, setIsScanningAi] = useState(false);
+  const [aiScanError, setAiScanError] = useState<string | null>(null);
 
-  const canEdit = currentUserRole === UserRole.ADMIN || currentUserRole === UserRole.MESTRI;
+  const canEdit = canWrite ?? (currentUserRole === UserRole.ADMIN || currentUserRole === UserRole.MESTRI);
+
+  const handleAiBillScan = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileName(file.name);
+    setAiScanError(null);
+    setIsScanningAi(true);
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        if (typeof reader.result !== 'string') return;
+        setBillUrl(reader.result);
+        const res = await appApi.scanBillWithAI(reader.result);
+        const ext = res.extracted || {};
+        if (ext.supplier) setSupplier(String(ext.supplier));
+        if (ext.invoiceNo) setInvoiceNo(String(ext.invoiceNo));
+        if (ext.date && /^\d{4}-\d{2}-\d{2}$/.test(String(ext.date))) setDate(String(ext.date));
+        if (ext.category && Object.values(MaterialCategory).includes(ext.category)) {
+          setCategory(ext.category as MaterialCategory);
+        }
+        if (ext.materialName) setMaterialName(String(ext.materialName));
+        if (ext.quantity) setQuantity(String(ext.quantity));
+        if (ext.unit) setUnit(String(ext.unit));
+        if (ext.rate) setRate(String(ext.rate));
+        if (ext.transportCharges) setTransportCharges(String(ext.transportCharges));
+        if (ext.extraExpenses) setExtraExpenses(String(ext.extraExpenses));
+      } catch (err: any) {
+        setAiScanError(err.message || 'Could not auto-read bill.');
+      } finally {
+        setIsScanningAi(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Sync helpers for custom split
   const handlePaidAmountChange = (valStr: string, total: number) => {
@@ -359,6 +404,36 @@ export default function MaterialPurchaseTracker({
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-3.5 text-slate-700">
+                {!editingId && (
+                  <div className="p-3 rounded-xl bg-gradient-to-r from-indigo-50 to-emerald-50 border border-indigo-100 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-indigo-800 flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500" /> AI Bill Auto-Fill (Gemini)
+                      </span>
+                      <label className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold cursor-pointer flex items-center gap-1">
+                        {isScanningAi ? (
+                          <>
+                            <RefreshCw className="w-3 h-3 animate-spin" /> Scanning...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3 h-3" /> Scan Receipt
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*,application/pdf"
+                          onChange={handleAiBillScan}
+                          disabled={isScanningAi}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                    <p className="text-[10px] text-slate-500">Upload a photo or PDF of a bill to auto-fill supplier, item, quantity, rate, and attach the receipt.</p>
+                    {aiScanError && <p className="text-[10px] text-rose-600 font-bold">{aiScanError}</p>}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label htmlFor="pcat-select" className="text-[10px] font-bold text-slate-500 uppercase">Category *</label>
@@ -916,6 +991,22 @@ export default function MaterialPurchaseTracker({
                       <span>Entered by: <strong className="text-slate-600">{pur.enteredBy}</strong></span>
 
                       <div className="flex items-center gap-1.5">
+                        {canEdit && onSettlePurchase && ((pur.creditAmount && pur.creditAmount > 0) || (pur.creditAmount === undefined && pur.paymentStatus === PaymentStatus.CREDIT)) && (
+                          <button
+                            id={`settle-purchase-btn-${pur.id}`}
+                            type="button"
+                            onClick={() => {
+                              const outstanding = pur.creditAmount ?? pur.totalAmount;
+                              if (window.confirm(`Mark credit of ₹${outstanding.toLocaleString('en-IN')} for "${pur.materialName}" as PAID?`)) {
+                                onSettlePurchase(pur.id, outstanding);
+                              }
+                            }}
+                            className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition-colors font-bold cursor-pointer"
+                            title="Settle pending credit payment"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Settle Credit
+                          </button>
+                        )}
                         {pur.billUrl && (
                           <button
                             id={`preview-bill-btn-${pur.id}`}

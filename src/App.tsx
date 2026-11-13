@@ -13,25 +13,15 @@ import {
   History, 
   RefreshCw,
   X,
-  PlusCircle,
-  TrendingDown,
   Bell,
   HardHat,
   ChevronRight,
   LogOut,
   Sliders,
   CheckCircle,
-  IndianRupee,
   Lock,
-  Search,
   Camera,
-  Menu,
-  Database,
-  Copy,
-  Download,
-  Upload,
-  Smartphone,
-  Check
+  Menu
 } from 'lucide-react';
 
 // Custom types and API helpers
@@ -43,10 +33,14 @@ import {
   DailyExpense, 
   Notification, 
   AuditLog, 
+  StagePhoto,
+  TaxInvoice,
+  RoleDefinition,
+  AppTab,
   UserRole,
   User as AppUser
 } from './types';
-import appApi from './api';
+import appApi, { getStoredToken, setStoredToken } from './api';
 
 // Subcomponents
 import Dashboard from './components/Dashboard';
@@ -64,30 +58,23 @@ import NotificationDrawer from './components/NotificationDrawer';
 import ReceiptLightbox from './components/ReceiptLightbox';
 import { CloudSyncAgent } from './components/CloudSyncAgent';
 
-type AppTabs = 
-  | 'dashboard' 
-  | 'projects' 
-  | 'advances' 
-  | 'materials' 
-  | 'labor' 
-  | 'daily' 
-  | 'reconciliation' 
-  | 'documents' 
-  | 'reports' 
-  | 'audit'
-  | 'photos';
+type AppTabs = AppTab;
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<AppTabs>('dashboard');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Core Data Lists
+  const [roles, setRoles] = useState<RoleDefinition[]>([]);
+  const [loginAccounts, setLoginAccounts] = useState<AppUser[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [advances, setAdvances] = useState<Advance[]>([]);
   const [purchases, setPurchases] = useState<MaterialPurchase[]>([]);
   const [laborExpenses, setLaborExpenses] = useState<LaborExpense[]>([]);
   const [dailyExpenses, setDailyExpenses] = useState<DailyExpense[]>([]);
+  const [stagePhotos, setStagePhotos] = useState<StagePhoto[]>([]);
+  const [taxInvoices, setTaxInvoices] = useState<TaxInvoice[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
@@ -95,51 +82,46 @@ export default function App() {
   // Auth session states
   const [sessionUser, setSessionUser] = useState<AppUser | null>(() => {
     const cached = localStorage.getItem('cms_session_user');
-    return cached ? JSON.parse(cached) : null;
+    const token = getStoredToken();
+    return cached && token ? JSON.parse(cached) : null;
   });
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  const currentUserRole = sessionUser?.role || UserRole.ADMIN;
-  const activeUser = sessionUser || { id: 'u1', name: 'Lalithesh N', role: UserRole.ADMIN, email: 'lalithesh@lvconstructions.com' };
+  const currentUserRole = sessionUser?.role || '';
+  const activeUser: AppUser = sessionUser || { id: '', name: '', role: '', email: '' };
+  const activeRoleDef = roles.find(r => r.name.toLowerCase() === currentUserRole.toLowerCase());
+  const canManageRoles = Boolean(activeRoleDef?.canManageRoles);
+  const canManageProjects = Boolean(activeRoleDef?.canManageProjects || activeRoleDef?.canManageRoles);
+  const canWriteExpenses = Boolean(activeRoleDef?.canWriteExpenses || activeRoleDef?.canManageRoles);
+  const canSimulateRoles = Boolean(localStorage.getItem('cms_admin_token')) || canManageRoles;
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [previewBillUrl, setPreviewBillUrl] = useState<string | null>(null);
   const [previewMetadata, setPreviewMetadata] = useState<any | null>(null);
 
-  // Database Sync Modal states
-  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
-  const [syncInputText, setSyncInputText] = useState('');
-  const [syncStatus, setSyncStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [copiedSyncCode, setCopiedSyncCode] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-
   // Security Credentials Administration State
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<AppUser[]>([]);
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
   const [securityEditPasswords, setSecurityEditPasswords] = useState<Record<string, string>>({});
   const [securityFeedback, setSecurityFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isUpdatingPasswordId, setIsUpdatingPasswordId] = useState<string | null>(null);
-  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({
-    u1: true,
-    u2: true,
-    u3: true
-  });
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
 
   const handleUpdatePassword = async (targetUserId: string, newPass: string) => {
-    if (!newPass.trim()) {
-      setSecurityFeedback({ type: 'error', message: 'Credentials cannot be completely blank.' });
+    if (!newPass.trim() || newPass.trim().length < 4) {
+      setSecurityFeedback({ type: 'error', message: 'Password must be at least 4 characters.' });
       return;
     }
     setIsUpdatingPasswordId(targetUserId);
     setSecurityFeedback(null);
     try {
-      const res = await appApi.updateUserPassword(targetUserId, newPass, activeUser.id, activeUser.name);
+      const res = await appApi.updateUserPassword(targetUserId, newPass.trim());
       setSecurityFeedback({ type: 'success', message: res.message });
-      // Reload states silently
+      setSecurityEditPasswords(prev => ({ ...prev, [targetUserId]: '' }));
       await loadDatabaseState(true);
     } catch (err: any) {
       setSecurityFeedback({ type: 'error', message: err?.message || 'Failed to sync credentials configuration.' });
@@ -148,30 +130,30 @@ export default function App() {
     }
   };
 
-  // Define tab pages permissions for each of the 3 roles
-  const getTabsForRole = (role: UserRole): AppTabs[] => {
-    switch (role) {
-      case UserRole.ADMIN:
-        return ['dashboard', 'projects', 'advances', 'materials', 'labor', 'daily', 'reconciliation', 'documents', 'reports', 'audit', 'photos'];
-      case UserRole.PROPRIETOR:
-        return ['dashboard', 'reconciliation', 'documents', 'reports', 'photos'];
-      case UserRole.MESTRI:
-        return ['dashboard', 'materials', 'labor', 'daily', 'documents', 'photos'];
-      default:
-        return ['dashboard'];
+  // Dynamic tab list driven by Supabase app_roles
+  const getTabsForRole = (roleName: string): AppTabs[] => {
+    const matched = roles.find(r => r.name.toLowerCase() === roleName.toLowerCase());
+    if (matched && matched.allowedTabs.length > 0) {
+      return matched.allowedTabs;
     }
+    return ['dashboard'];
   };
 
-  const handleQuickLogin = async (email: string, password?: string) => {
+  const handleLogin = async (email: string, password: string) => {
     setLoading(true);
     setLoginError(null);
     try {
       const res = await appApi.login(email, password);
-      if (res?.user) {
+      if (res?.user && res?.token) {
+        setStoredToken(res.token);
+        const roleDef = roles.find(r => r.name.toLowerCase() === res.user.role.toLowerCase());
+        if (roleDef?.canManageRoles || res.user.role === UserRole.ADMIN) {
+          localStorage.setItem('cms_admin_token', res.token);
+        } else {
+          localStorage.removeItem('cms_admin_token');
+        }
         setSessionUser(res.user);
         localStorage.setItem('cms_session_user', JSON.stringify(res.user));
-        
-        // Always reset navigation tab to allowed view upon login
         setActiveTab('dashboard');
       } else {
         setLoginError('Verification failed. Try again.');
@@ -185,66 +167,104 @@ export default function App() {
 
   const handleManualLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginEmail.trim()) return;
-    handleQuickLogin(loginEmail.trim(), loginPassword.trim());
+    if (!loginEmail.trim() || !loginPassword.trim()) return;
+    handleLogin(loginEmail.trim(), loginPassword.trim());
+  };
+
+  const handleRoleSwitch = async (role: string, userId?: string) => {
+    const adminToken = localStorage.getItem('cms_admin_token');
+    if (adminToken) {
+      setStoredToken(adminToken);
+    }
+    try {
+      const res = await appApi.impersonateRole(role, userId);
+      if (res?.user && res?.token) {
+        setStoredToken(res.token);
+        setSessionUser(res.user);
+        localStorage.setItem('cms_session_user', JSON.stringify(res.user));
+        setActiveTab('dashboard');
+        setIsNotifOpen(false);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed switching simulation role');
+    }
   };
 
   const handleLogout = () => {
     setSessionUser(null);
     setLoginPassword('');
+    setStoredToken(null);
     localStorage.removeItem('cms_session_user');
+    localStorage.removeItem('cms_admin_token');
   };
+
+  // Fetch public dynamic roles & accounts for login screen
+  useEffect(() => {
+    if (!sessionUser) {
+      appApi.getLoginOptions()
+        .then(res => {
+          setLoginAccounts(res.users || []);
+          setRoles(res.roles || []);
+        })
+        .catch(() => {});
+    }
+  }, [sessionUser]);
 
   // Initial and reactive loader
   const loadDatabaseState = async (silently = false) => {
+    if (!getStoredToken()) return;
     if (!silently) setLoading(true);
     try {
       const data = await appApi.getData();
-      
-      // Filter out deleted projects
+
+      if (Array.isArray(data.roles)) setRoles(data.roles);
       const activeProjects = (data.projects || []).filter((p: Project) => !p.isDeleted);
       setProjects(activeProjects);
-      
+
       setAdvances(data.advances || []);
       setPurchases(data.purchases || []);
       setLaborExpenses(data.laborExpenses || []);
       setDailyExpenses(data.dailyExpenses || []);
+      setStagePhotos(data.stagePhotos || []);
+      setTaxInvoices(data.taxInvoices || []);
       setNotifications(data.notifications || []);
       setAuditLogs(data.auditLogs || []);
       setUsers(data.users || []);
 
-      // Retain or select active project
       if (activeProjects.length > 0) {
-        if (activeProject) {
-          const currentFresh = activeProjects.find((p: Project) => p.id === activeProject.id);
-          setActiveProject(currentFresh || activeProjects[0]);
-        } else {
-          setActiveProject(activeProjects[0]);
-        }
+        setActiveProject(prev => {
+          if (prev) {
+            const currentFresh = activeProjects.find((p: Project) => p.id === prev.id);
+            return currentFresh || activeProjects[0];
+          }
+          return activeProjects[0];
+        });
       } else {
         setActiveProject(null);
       }
-      
+
       setError(null);
     } catch (err: any) {
-      setError(err.message || 'Failure loading construction budget databases.');
+      if (err?.status === 401) {
+        handleLogout();
+      } else {
+        setError(err.message || 'Failure loading construction budget databases.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadDatabaseState();
-  }, []);
+    if (sessionUser && getStoredToken()) {
+      loadDatabaseState();
+    }
+  }, [sessionUser?.id]);
 
   // Callback triggers for child components
   const handleAddProject = async (projectData: Partial<Project>) => {
     try {
-      await appApi.saveProject({
-        ...projectData,
-        userId: activeUser.id,
-        userName: activeUser.name,
-      });
+      await appApi.saveProject(projectData);
       await loadDatabaseState(true);
     } catch (err: any) {
       alert(err.message || 'Cannot save project metadata');
@@ -253,7 +273,7 @@ export default function App() {
 
   const handleDeleteProject = async (pId: string) => {
     try {
-      await appApi.deleteProject(pId, activeUser.id, activeUser.name);
+      await appApi.deleteProject(pId);
       await loadDatabaseState(true);
     } catch (err: any) {
       alert(err.message || 'Cannot delete project');
@@ -262,11 +282,7 @@ export default function App() {
 
   const handleAddAdvance = async (advanceData: Partial<Advance>) => {
     try {
-      await appApi.addAdvance({
-        ...advanceData,
-        userId: activeUser.id,
-        userName: activeUser.name,
-      });
+      await appApi.addAdvance(advanceData);
       await loadDatabaseState(true);
     } catch (err: any) {
       alert(err.message || 'Disbursement failure');
@@ -275,11 +291,7 @@ export default function App() {
 
   const handleAddPurchase = async (purchaseData: Partial<MaterialPurchase>) => {
     try {
-      await appApi.addPurchase({
-        ...purchaseData,
-        userId: activeUser.id,
-        userName: activeUser.name,
-      });
+      await appApi.addPurchase(purchaseData);
       await loadDatabaseState(true);
     } catch (err: any) {
       alert(err.message || 'Material entry failure');
@@ -288,42 +300,89 @@ export default function App() {
 
   const handleDeletePurchase = async (purchaseId: string) => {
     try {
-      await appApi.deletePurchase(purchaseId, activeUser.id, activeUser.name);
+      await appApi.deletePurchase(purchaseId);
       await loadDatabaseState(true);
     } catch (err: any) {
       alert(err.message || 'Failed log removal');
     }
   };
 
+  const handleSettlePurchase = async (purchaseId: string, payAmount?: number) => {
+    try {
+      await appApi.settlePurchaseCredit(purchaseId, payAmount);
+      await loadDatabaseState(true);
+    } catch (err: any) {
+      alert(err.message || 'Failed settling purchase credit');
+    }
+  };
+
   const handleAddLabor = async (laborData: Partial<LaborExpense>) => {
     try {
-      await appApi.addLabor({
-        ...laborData,
-        userId: activeUser.id,
-        userName: activeUser.name,
-      });
+      await appApi.addLabor(laborData);
       await loadDatabaseState(true);
     } catch (err: any) {
       alert(err.message || 'Wage registration failure');
     }
   };
 
+  const handleSettleLabor = async (laborId: string) => {
+    try {
+      await appApi.settleLaborCredit(laborId);
+      await loadDatabaseState(true);
+    } catch (err: any) {
+      alert(err.message || 'Failed settling labor credit');
+    }
+  };
+
   const handleAddDailyExpense = async (dailyData: Partial<DailyExpense>) => {
     try {
-      await appApi.addDailyExpense({
-        ...dailyData,
-        userId: activeUser.id,
-        userName: activeUser.name,
-      });
+      await appApi.addDailyExpense(dailyData);
       await loadDatabaseState(true);
     } catch (err: any) {
       alert(err.message || 'Voucher logging failure');
     }
   };
 
+  const handleSettleDaily = async (dailyId: string) => {
+    try {
+      await appApi.settleDailyCredit(dailyId);
+      await loadDatabaseState(true);
+    } catch (err: any) {
+      alert(err.message || 'Failed settling daily expense credit');
+    }
+  };
+
+  const handleAddStagePhoto = async (photo: Omit<StagePhoto, 'id' | 'uploadedBy'>) => {
+    await appApi.addStagePhoto(photo);
+    await loadDatabaseState(true);
+  };
+
+  const handleDeleteStagePhoto = async (photoId: string) => {
+    try {
+      await appApi.deleteStagePhoto(photoId);
+      await loadDatabaseState(true);
+    } catch (err: any) {
+      alert(err.message || 'Failed deleting stage photo');
+    }
+  };
+
+  const handleSaveTaxInvoice = async (invoice: Omit<TaxInvoice, 'id'>) => {
+    await appApi.saveTaxInvoice(invoice);
+    await loadDatabaseState(true);
+  };
+
+  const handleDeleteTaxInvoice = async (invoiceId: string) => {
+    try {
+      await appApi.deleteTaxInvoice(invoiceId);
+      await loadDatabaseState(true);
+    } catch (err: any) {
+      alert(err.message || 'Failed deleting invoice');
+    }
+  };
+
   const handleMarkAllNotificationsRead = async () => {
     try {
-      await appApi.markNotificationsRead(activeUser.id);
+      await appApi.markNotificationsRead();
       await loadDatabaseState(true);
     } catch (err) {
       console.warn('Failed clearing indicators', err);
@@ -335,37 +394,8 @@ export default function App() {
     setPreviewMetadata(metadata || null);
   };
 
-  const handleApplySyncCode = async (code: string) => {
-    if (!code.trim()) {
-      setSyncStatus({ type: 'error', message: 'Please paste a valid sync code first.' });
-      return;
-    }
-    setIsSyncing(true);
-    setSyncStatus(null);
-    try {
-      const decodedStr = decodeURIComponent(escape(atob(code.trim())));
-      const parsed = JSON.parse(decodedStr);
-      if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.users) || !Array.isArray(parsed.projects)) {
-        throw new Error('Malformed database schema detected within the sync code.');
-      }
-      
-      const res = await appApi.importDatabase(parsed);
-      setSyncStatus({ type: 'success', message: 'Database successfully imported! Reloading state...' });
-      setSyncInputText('');
-      setTimeout(() => {
-        setIsSyncModalOpen(false);
-        setSyncStatus(null);
-        window.location.reload();
-      }, 2000);
-    } catch (err: any) {
-      setSyncStatus({ type: 'error', message: 'Failed to restore: ' + err.message });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  // Derive unread alerts
-  const unreadNotifs = notifications.filter(n => !n.isRead);
+  // Derive unread alerts using per-user read tracking
+  const unreadNotifs = notifications.filter(n => !n.isReadBy?.includes(activeUser.id));
 
   // Selectable navigation tab specs
   const getTabLabel = (key: AppTabs) => {
@@ -418,19 +448,20 @@ export default function App() {
                 Seamless real-time logs, on-site material deliveries, labor payouts, and executive reconciliations in one central ledger. Fully secure with credential protection.
               </p>
               
-              <div className="space-y-3 pt-2 text-xs font-semibold text-slate-300">
-                <div className="flex gap-2.5 items-center">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span>Project Administrator: Lalithesh N</span>
-                </div>
-                <div className="flex gap-2.5 items-center">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span>Project Proprietor: Varun Kashyap</span>
-                </div>
-                <div className="flex gap-2.5 items-center">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span>Site Supervisor Mestri: Nagaraj S</span>
-                </div>
+              <div className="space-y-2.5 pt-2 text-xs font-semibold text-slate-300">
+                {roles.length === 0 ? (
+                  <div className="flex gap-2.5 items-center text-slate-400">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span>Dynamic Role-Based Access Control Active</span>
+                  </div>
+                ) : (
+                  roles.map((r) => (
+                    <div key={r.id} className="flex gap-2.5 items-center">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      <span>{r.name}: <span className="text-slate-400 font-normal">{r.description || `${r.allowedTabs.length} modules`}</span></span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -441,69 +472,60 @@ export default function App() {
           </div>
 
           {/* Actual Login Interactive Form column */}
-          <div className="p-8 md:p-12 flex flex-col justify-center space-y-8 bg-white">
+          <div className="p-8 md:p-12 flex flex-col justify-center space-y-6 bg-white">
             <div className="space-y-2">
               <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Supervisor Portal Access</h3>
-              <p className="text-slate-500 text-xs leading-relaxed">Choose an account below for instant demo login, or enter credentials manually with the newly configured passwords.</p>
+              <p className="text-slate-500 text-xs leading-relaxed">Select an active account from the database below or enter your username/email and password.</p>
             </div>
 
-            {/* Quick-select role options with credentials displayed */}
-            <div className="space-y-3">
-              <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 block">Instant Portal Gateways</label>
-              
-              <button
-                onClick={() => handleQuickLogin('lalithesh@lvconstructions.com', users.find(u => u.id === 'u1')?.password || 'admin123')}
-                className="w-full text-left p-3.5 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/10 transition-all flex items-center gap-3.5 group cursor-pointer"
-              >
-                <div className="p-2 mr-0.5 rounded-xl bg-blue-500/10 text-blue-600 group-hover:bg-blue-500/20 transition-all">
-                  <User className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="font-extrabold text-slate-800 text-xs">Lalithesh N (Admin)</span>
-                    <span className="text-[8px] font-black bg-blue-50 text-blue-605 border border-blue-100 uppercase px-1.5 py-0.5 rounded-md">Pass: {users.find(u => u.id === 'u1')?.password || 'admin123'}</span>
-                  </div>
-                  <p className="text-[10px] text-slate-400 mt-0.5 truncate">lalithesh@lvconstructions.com • Full Control</p>
-                </div>
-              </button>
-
-              <button
-                onClick={() => handleQuickLogin('varun@lvconstructions.com', users.find(u => u.id === 'u2')?.password || 'varun123')}
-                className="w-full text-left p-3.5 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/10 transition-all flex items-center gap-3.5 group cursor-pointer"
-              >
-                <div className="p-2 mr-0.5 rounded-xl bg-purple-500/10 text-purple-600 group-hover:bg-purple-500/20 transition-all">
-                  <Building2 className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="font-extrabold text-slate-800 text-xs">Varun Kashyap (Proprietor)</span>
-                    <span className="text-[8px] font-black bg-purple-50 text-purple-605 border border-purple-100 uppercase px-1.5 py-0.5 rounded-md">Pass: {users.find(u => u.id === 'u2')?.password || 'varun123'}</span>
-                  </div>
-                  <p className="text-[10px] text-slate-400 mt-0.5 truncate">varun@lvconstructions.com • Audit Access</p>
-                </div>
-              </button>
-
-              <button
-                onClick={() => handleQuickLogin('nagaraj@lvconstructions.com', users.find(u => u.id === 'u3')?.password || 'nagaraj123')}
-                className="w-full text-left p-3.5 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/10 transition-all flex items-center gap-3.5 group cursor-pointer"
-              >
-                <div className="p-2 mr-0.5 rounded-xl bg-amber-500/10 text-amber-600 group-hover:bg-amber-500/20 transition-all">
-                  <HardHat className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="font-extrabold text-slate-800 text-xs">Nagaraj S (Mestri)</span>
-                    <span className="text-[8px] font-black bg-amber-50 text-amber-650 border border-amber-100 uppercase px-1.5 py-0.5 rounded-md">Pass: {users.find(u => u.id === 'u3')?.password || 'nagaraj123'}</span>
-                  </div>
-                  <p className="text-[10px] text-slate-400 mt-0.5 truncate">nagaraj@lvconstructions.com • Daily Site Logs</p>
-                </div>
-              </button>
-            </div>
+            {/* Dynamic Account Select from Supabase */}
+            {loginAccounts.length > 0 && (
+              <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 block">Registered Accounts</label>
+                {loginAccounts.map((acc) => (
+                  <button
+                    key={acc.id}
+                    type="button"
+                    onClick={() => {
+                      setLoginEmail(acc.username || acc.email);
+                      setLoginError(null);
+                      document.getElementById('login-password-input')?.focus();
+                    }}
+                    className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center gap-3 group cursor-pointer ${
+                      loginEmail === (acc.username || acc.email) || loginEmail === acc.email
+                        ? 'border-emerald-500 bg-emerald-50/20'
+                        : 'border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/10'
+                    }`}
+                  >
+                    <div className="p-2 rounded-xl bg-slate-100 text-slate-700 group-hover:bg-emerald-500/15 group-hover:text-emerald-700 transition-all">
+                      {acc.role.toLowerCase().includes('mestri') ? (
+                        <HardHat className="w-4 h-4" />
+                      ) : acc.role.toLowerCase().includes('admin') ? (
+                        <User className="w-4 h-4" />
+                      ) : (
+                        <Building2 className="w-4 h-4" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-extrabold text-slate-800 text-xs truncate">{acc.name}</span>
+                        <span className="text-[8px] font-black bg-slate-100 text-slate-700 border border-slate-200 uppercase px-1.5 py-0.5 rounded-md shrink-0">
+                          {acc.role}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-0.5 truncate">
+                        {acc.email} {acc.username ? `• @${acc.username}` : ''}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* OR text dividing line */}
             <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold">
               <div className="flex-1 h-px bg-slate-100"></div>
-              <span>OR LOG IN SECURELY</span>
+              <span>SIGN IN WITH CREDENTIALS</span>
               <div className="flex-1 h-px bg-slate-100"></div>
             </div>
 
@@ -515,7 +537,7 @@ export default function App() {
                   id="login-email-input"
                   type="text"
                   required
-                  placeholder="lalithesh / varun / nagaraj"
+                  placeholder="Enter username or email"
                   value={loginEmail}
                   onChange={(e) => {
                     setLoginEmail(e.target.value);
@@ -531,7 +553,7 @@ export default function App() {
                   id="login-password-input"
                   type="password"
                   required
-                  placeholder="admin123 / varun123 / nagaraj123"
+                  placeholder="Enter your password"
                   value={loginPassword}
                   onChange={(e) => {
                     setLoginPassword(e.target.value);
@@ -550,9 +572,10 @@ export default function App() {
 
               <button
                 type="submit"
-                className="w-full py-3 bg-slate-900 hover:bg-slate-950 text-white font-extrabold text-xs rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer select-none"
+                disabled={loading}
+                className="w-full py-3 bg-slate-900 hover:bg-slate-950 disabled:bg-slate-400 text-white font-extrabold text-xs rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer select-none"
               >
-                <span>Launch LV Console</span>
+                <span>{loading ? 'Verifying...' : 'Launch LV Console'}</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </form>
@@ -564,12 +587,15 @@ export default function App() {
   }
 
   const currentDbState = {
+    roles,
     users,
     projects,
     advances,
     purchases,
     laborExpenses,
     dailyExpenses,
+    stagePhotos,
+    taxInvoices,
     notifications,
     auditLogs
   };
@@ -577,41 +603,52 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-100 text-slate-800 selection:bg-emerald-100 selection:text-emerald-800 flex flex-col font-sans">
       
-      {/* Simulation Persona Bar at Top (AI Studio Demo control, absolute transparency) */}
+      {/* Simulation Persona Bar at Top (Admin only) */}
       <div className="bg-slate-900 border-b border-slate-800 text-white p-3 py-2 px-4 flex flex-col md:flex-row justify-between items-center gap-3 no-print">
-        <div className="flex items-center gap-2">
-          <Sliders className="w-4 h-4 text-emerald-500 animate-spin-slow" />
-          <span className="text-[10px] uppercase font-black tracking-widest text-slate-400">Quick Simulation Switch:</span>
-          <div className="flex gap-1.5 flex-wrap">
-            {Object.values(UserRole).map(role => (
-              <button
-                id={`switch-role-btn-${role.toLowerCase()}`}
-                key={role}
-                onClick={async () => {
-                  let email = 'lalithesh@lvconstructions.com';
-                  let pass = users.find(u => u.id === 'u1')?.password || 'admin123';
-                  if (role === UserRole.PROPRIETOR) {
-                    email = 'varun@lvconstructions.com';
-                    pass = users.find(u => u.id === 'u2')?.password || 'varun123';
-                  }
-                  if (role === UserRole.MESTRI) {
-                    email = 'nagaraj@lvconstructions.com';
-                    pass = users.find(u => u.id === 'u3')?.password || 'nagaraj123';
-                  }
-                  await handleQuickLogin(email, pass);
-                  setIsNotifOpen(false);
+        {canSimulateRoles ? (
+          <div className="flex items-center gap-2 flex-wrap">
+            <Sliders className="w-4 h-4 text-emerald-500 animate-spin-slow" />
+            <span className="text-[10px] uppercase font-black tracking-widest text-slate-400">Role Preview:</span>
+            <div className="flex gap-1.5 flex-wrap">
+              {roles.map(r => (
+                <button
+                  id={`switch-role-btn-${r.name.toLowerCase()}`}
+                  key={r.id}
+                  onClick={() => handleRoleSwitch(r.name)}
+                  className={`px-3 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] font-black rounded-lg uppercase tracking-wider transition-all cursor-pointer ${
+                    currentUserRole.toLowerCase() === r.name.toLowerCase()
+                      ? 'border border-emerald-500 text-emerald-400 bg-emerald-500/10'
+                      : 'border border-transparent text-slate-300'
+                  }`}
+                >
+                  {r.name}
+                </button>
+              ))}
+            </div>
+            {users.length > 1 && (
+              <select
+                aria-label="Preview specific user"
+                value={activeUser.id}
+                onChange={(e) => {
+                  const target = users.find(u => u.id === e.target.value);
+                  if (target) handleRoleSwitch(target.role, target.id);
                 }}
-                className={`px-3 py-1 bg-slate-800 hover:bg-slate-700 active:bg-slate-650 text-[10px] font-black rounded-lg uppercase tracking-wider transition-all cursor-pointer ${
-                  currentUserRole === role 
-                    ? 'border border-emerald-500 text-emerald-400 bg-emerald-500/10' 
-                    : 'border border-transparent text-slate-350'
-                }`}
+                className="ml-1 px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-lg text-[10px] font-bold text-slate-200 outline-none cursor-pointer"
               >
-                {role}
-              </button>
-            ))}
+                {users.map(u => (
+                  <option key={u.id} value={u.id}>
+                    {u.name} ({u.role})
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center gap-2 text-[10px] uppercase font-black tracking-widest text-slate-400">
+            <Building2 className="w-4 h-4 text-emerald-500" />
+            <span>LV Constructions • Supabase Cloud Session</span>
+          </div>
+        )}
 
         <div className="flex items-center gap-4 text-xs font-semibold text-slate-350">
           <p className="flex items-center gap-1">
@@ -830,13 +867,13 @@ export default function App() {
                 onStateRestored={() => loadDatabaseState(true)} 
               />
 
-              {/* Security Credentials Shield (Admin Only) */}
-              {currentUserRole === UserRole.ADMIN && (
+              {/* Security Credentials Shield (Role Manager Only) */}
+              {canManageRoles && (
                 <button
                   id="header-security-btn"
                   onClick={() => setIsSecurityModalOpen(true)}
                   className="px-3.5 py-2.5 bg-amber-50 border border-amber-200 hover:border-amber-300 text-amber-800 hover:text-amber-900 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
-                  title="🔑 Admin Credentials Security Panel"
+                  title="🔑 Credentials Security Panel"
                 >
                   <Lock className="w-4 h-4 text-amber-600" />
                   <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">Credentials Shield</span>
@@ -878,16 +915,16 @@ export default function App() {
             /* Render active tab viewport components */
             <div className="space-y-6">
               
-              {!activeProject && activeTab !== 'projects' && activeTab !== 'dashboard' ? (
+              {!activeProject && activeTab !== 'projects' && activeTab !== 'dashboard' && activeTab !== 'audit' ? (
                 <div id="no-project-selected-fallback" className="bg-white rounded-2xl border border-slate-100 p-12 text-center max-w-xl mx-auto my-12 shadow-sm">
                   <Building2 className="w-16 h-16 mx-auto text-slate-300 stroke-[1.5] mb-4" />
                   <h3 className="text-lg font-bold text-slate-800">No Construction Sites Configured</h3>
                   <p className="text-slate-550 mt-2 text-xs leading-relaxed max-w-md mx-auto">
-                    {currentUserRole === UserRole.ADMIN 
+                    {canManageProjects 
                       ? "You need to register at least one project site before tracking site advances or daily vouchers. Let's add details for your first site now." 
-                      : "No active projects are configured in the system yet. Please wait for the Contract Administrator to add site details so you can view reports or log expenses."}
+                      : "No active projects are assigned or configured yet. Please contact your administrator."}
                   </p>
-                  {currentUserRole === UserRole.ADMIN && (
+                  {canManageProjects && (
                     <button 
                       onClick={() => setActiveTab('projects')}
                       className="mt-6 px-4.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition-colors cursor-pointer select-none"
@@ -914,7 +951,9 @@ export default function App() {
                   {activeTab === 'projects' && (
                     <ProjectManager 
                       projects={projects}
+                      users={users}
                       currentUserRole={currentUserRole}
+                      canManage={canManageProjects}
                       currentUserId={activeUser.id}
                       currentUserName={activeUser.name}
                       onSaveProject={handleAddProject}
@@ -926,11 +965,13 @@ export default function App() {
                     <AdvanceManager 
                       activeProject={activeProject}
                       projects={projects}
+                      users={users}
                       advances={advances}
                       purchases={purchases}
                       laborExpenses={laborExpenses}
                       dailyExpenses={dailyExpenses}
                       currentUserRole={currentUserRole}
+                      canManage={canManageProjects}
                       currentUserName={activeUser.name}
                       onAddAdvance={handleAddAdvance}
                     />
@@ -941,9 +982,11 @@ export default function App() {
                       activeProject={activeProject}
                       purchases={purchases}
                       currentUserRole={currentUserRole}
+                      canWrite={canWriteExpenses}
                       currentUserName={activeUser.name}
                       onAddPurchase={handleAddPurchase}
                       onDeletePurchase={handleDeletePurchase}
+                      onSettlePurchase={handleSettlePurchase}
                       onPreviewBill={handleOpenPreviewLightbox}
                     />
                   )}
@@ -953,8 +996,10 @@ export default function App() {
                       activeProject={activeProject}
                       laborExpenses={laborExpenses}
                       currentUserRole={currentUserRole}
+                      canWrite={canWriteExpenses}
                       currentUserName={activeUser.name}
                       onAddLabor={handleAddLabor}
+                      onSettleLabor={handleSettleLabor}
                     />
                   )}
 
@@ -963,8 +1008,10 @@ export default function App() {
                       activeProject={activeProject}
                       dailyExpenses={dailyExpenses}
                       currentUserRole={currentUserRole}
+                      canWrite={canWriteExpenses}
                       currentUserName={activeUser.name}
                       onAddDailyExpense={handleAddDailyExpense}
+                      onSettleDaily={handleSettleDaily}
                       onPreviewBill={handleOpenPreviewLightbox}
                     />
                   )}
@@ -1006,6 +1053,10 @@ export default function App() {
                       activeProject={activeProject}
                       projects={projects}
                       users={users}
+                      roles={roles}
+                      taxInvoices={taxInvoices}
+                      onSaveTaxInvoice={handleSaveTaxInvoice}
+                      onDeleteTaxInvoice={handleDeleteTaxInvoice}
                       onReloadData={async () => { await loadDatabaseState(true); }}
                       activeUser={activeUser}
                     />
@@ -1014,8 +1065,12 @@ export default function App() {
                   {activeTab === 'photos' && (
                     <StagePhotosManager 
                       activeProject={activeProject}
+                      photos={stagePhotos}
                       currentUserRole={currentUserRole}
-                      currentUserName={sessionUser.name}
+                      canWrite={canWriteExpenses}
+                      currentUserName={activeUser.name}
+                      onAddPhoto={handleAddStagePhoto}
+                      onDeletePhoto={handleDeleteStagePhoto}
                     />
                   )}
                 </>
@@ -1038,266 +1093,6 @@ export default function App() {
             setPreviewMetadata(null);
           }} 
         />
-      )}
-
-      {/* Database Sync Modal */}
-      {isSyncModalOpen && (
-        <div id="database-sync-modal" className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 md:p-7 space-y-5 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex justify-between items-start border-b border-slate-105 pb-4">
-              <div className="flex items-center gap-2 text-indigo-700">
-                <Database className="w-6 h-6 animate-pulse" />
-                <div className="space-y-0.5 animate-pulse">
-                  <h3 className="text-xs font-black text-slate-900 uppercase">Cross-Device Database Synchronizer</h3>
-                  <p className="text-[9px] font-semibold text-indigo-500 uppercase">Sync Development & Mobile Databases</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsSyncModalOpen(false)}
-                className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded-xl transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Explainer */}
-            <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 text-[11px] text-slate-600 space-y-2 leading-relaxed">
-              <p className="font-bold text-slate-700">💡 Why are the editor and mobile data different?</p>
-              <p>
-                To provide safe drafting and responsive previewing, Google AI Studio hosts your <strong>Editor Preview (Dev Container)</strong> and <strong>Mobile Shared App (Production Container)</strong> on two separate, fully isolated environments.
-              </p>
-              <p>
-                As a result, changes made inside your editor do not automatically show up on your mobile app, and vice versa. Use this panel to instantly sync your data across both platforms using a simple <strong>Sync Code</strong> or <strong>Backup file</strong>.
-              </p>
-            </div>
-
-            {/* Direct Sync Option 1: Clipboard Base64 Transfer */}
-            <div className="bg-indigo-50/40 border border-indigo-100/50 rounded-2xl p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-indigo-900 uppercase tracking-wide block">Option A: Wireless Copy-Paste (Sync Code)</span>
-                <span className="text-[8px] bg-indigo-100 text-indigo-805 font-extrabold px-1.5 py-0.5 rounded-full uppercase">Simplest! No Files Required</span>
-              </div>
-
-              <div className="space-y-2 text-xs">
-                <p className="text-[11px] font-semibold text-slate-600 leading-normal">
-                  <strong>1. Export Code:</strong> Click below to generate and copy a compact sync code containing your current database records.
-                </p>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      const fullDb = await appApi.getData();
-                      const stringified = JSON.stringify(fullDb);
-                      const b64 = btoa(unescape(encodeURIComponent(stringified)));
-                      await navigator.clipboard.writeText(b64);
-                      setCopiedSyncCode(true);
-                      setTimeout(() => setCopiedSyncCode(false), 3000);
-                    } catch (err: any) {
-                      alert('Failed to generate sync code: ' + err.message);
-                    }
-                  }}
-                  className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all border shadow-xs ${
-                    copiedSyncCode
-                      ? 'bg-emerald-600 text-white border-emerald-600'
-                      : 'bg-white hover:bg-slate-50 text-indigo-700 border-indigo-200 hover:border-indigo-300'
-                  }`}
-                >
-                  {copiedSyncCode ? (
-                    <>
-                      <Check className="w-4 h-4 animate-bounce" />
-                      <span>Copied to Clipboard!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4" />
-                      <span>Generate & Copy Sync Code</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              <div className="space-y-2 border-t border-indigo-100/50 pt-3 text-xs">
-                <label className="text-[11px] font-semibold text-slate-600 block leading-normal">
-                  <strong>2. Import Code:</strong> On the other device (e.g. your mobile browser), open this menu and paste the Sync Code below to restore.
-                </label>
-                <textarea
-                  placeholder="Paste the sync code here..."
-                  value={syncInputText}
-                  onChange={(e) => setSyncInputText(e.target.value)}
-                  className="w-full h-20 px-3 py-2 border border-slate-200 bg-white rounded-xl text-xs outline-none focus:border-indigo-500 font-mono text-slate-700 font-medium placeholder-slate-400"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleApplySyncCode(syncInputText)}
-                  disabled={isSyncing || !syncInputText.trim()}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold uppercase py-2.5 rounded-xl text-xs cursor-pointer select-none transition-all shadow-xs"
-                >
-                  {isSyncing ? 'Restoring Ledger data...' : 'Apply Pasted Sync Code'}
-                </button>
-              </div>
-            </div>
-
-            {/* Sync Option 2: File Backup / Restore */}
-            <div className="border border-slate-200 rounded-2xl p-4 space-y-4">
-              <span className="text-[10px] font-black text-slate-700 uppercase tracking-wide block">Option B: Offline File Import & Export</span>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {/* Download backup file button */}
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-bold text-slate-500 block uppercase tracking-wider">Create Safe Backup:</span>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        const fullDb = await appApi.getData();
-                        const stringified = JSON.stringify(fullDb, null, 2);
-                        const blob = new Blob([stringified], { type: 'application/json' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `lv_constructions_db_backup_${new Date().toISOString().split('T')[0]}.json`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                      } catch (err: any) {
-                        alert('Failed to download: ' + err.message);
-                      }
-                    }}
-                    className="w-full py-2.5 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
-                  >
-                    <Download className="w-4 h-4 text-slate-500" />
-                    <span>Download JSON File</span>
-                  </button>
-                </div>
-
-                {/* Import backup file input */}
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-bold text-slate-500 block uppercase tracking-wider">Restore JSON File:</span>
-                  <label className="w-full py-2.5 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-305 text-slate-705 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all border-dashed">
-                    <Upload className="w-4 h-4 text-slate-500" />
-                    <span>Select Backup File</span>
-                    <input
-                      type="file"
-                      accept=".json"
-                      onChange={async (event) => {
-                        const file = event.target.files?.[0];
-                        if (!file) return;
-                        setIsSyncing(true);
-                        setSyncStatus(null);
-                        
-                        const reader = new FileReader();
-                        reader.onload = async (e) => {
-                          try {
-                            const text = e.target?.result as string;
-                            const parsed = JSON.parse(text);
-                            if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.users) || !Array.isArray(parsed.projects)) {
-                              throw new Error('Malformed database schema. Missing users or projects arrays.');
-                            }
-                            
-                            await appApi.importDatabase(parsed);
-                            setSyncStatus({ type: 'success', message: 'Backup file successfully imported! Reloading containers...' });
-                            setTimeout(() => {
-                              setIsSyncModalOpen(false);
-                              setSyncStatus(null);
-                              window.location.reload();
-                            }, 2000);
-                          } catch (err: any) {
-                            setSyncStatus({ type: 'error', message: 'File read error: ' + err.message });
-                          } finally {
-                            setIsSyncing(false);
-                          }
-                        };
-                        reader.readAsText(file);
-                      }}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Sync Option 3: Real-Time Firestore Cloud Sync */}
-            <div className="bg-emerald-50/30 border border-emerald-100/50 rounded-2xl p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-emerald-950 uppercase tracking-wide block">Option C: cloud sync (Firestore)</span>
-                <span className="text-[8px] bg-emerald-100 text-emerald-805 font-extrabold px-1.5 py-0.5 rounded-full uppercase">Automatic & Real-Time</span>
-              </div>
-              <p className="text-[10.5px] text-slate-600 leading-normal">
-                Any modifications you make are automatically backed up to Firestore in real-time. If databases on your mobile app or editor are ever out of sync, trigger a manual Cloud Pull below to align both seamlessly.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                {/* Manual Cloud Pull */}
-                <button
-                  type="button"
-                  disabled={isSyncing}
-                  onClick={async () => {
-                    setIsSyncing(true);
-                    setSyncStatus(null);
-                    try {
-                      const res = await appApi.pullDatabaseFromCloud();
-                      setSyncStatus({ type: 'success', message: res.message + ' Refreshing...' });
-                      setTimeout(() => {
-                        setIsSyncModalOpen(false);
-                        setSyncStatus(null);
-                        window.location.reload();
-                      }, 2000);
-                    } catch (err: any) {
-                      setSyncStatus({ type: 'error', message: err.message });
-                    } finally {
-                      setIsSyncing(false);
-                    }
-                  }}
-                  className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm"
-                >
-                  <Download className="w-4 h-4 text-emerald-100" />
-                  <span>Manual Pull from Cloud</span>
-                </button>
-
-                {/* Manual Cloud Push */}
-                <button
-                  type="button"
-                  disabled={isSyncing}
-                  onClick={async () => {
-                    setIsSyncing(true);
-                    setSyncStatus(null);
-                    try {
-                      const res = await appApi.pushDatabaseToCloud();
-                      setSyncStatus({ type: 'success', message: res.message });
-                    } catch (err: any) {
-                      setSyncStatus({ type: 'error', message: err.message });
-                    } finally {
-                      setIsSyncing(false);
-                    }
-                  }}
-                  className="w-full py-2.5 px-3 bg-white hover:bg-slate-50 border border-emerald-205 text-emerald-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
-                >
-                  <Upload className="w-4 h-4 text-emerald-600" />
-                  <span>Manual Push to Cloud</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Sync Feedback messages */}
-            {syncStatus && (
-              <div
-                id="sync-status"
-                className={`p-3.5 rounded-xl text-xs font-bold leading-normal ${
-                  syncStatus.type === 'success'
-                    ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
-                    : 'bg-rose-50 border border-rose-205 text-rose-800'
-                }`}
-              >
-                {syncStatus.message}
-              </div>
-            )}
-
-            <div className="flex justify-between items-center text-[9px] font-bold text-slate-400 select-none border-t border-slate-100 pt-3">
-              <span>LV Site Control Core v1.5 • Secure Container Isolation</span>
-              <span className="text-indigo-500 hover:underline cursor-pointer" onClick={() => loadDatabaseState()}>Re-fetch from server</span>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Security Credentials Shield Modal */}
@@ -1329,32 +1124,34 @@ export default function App() {
 
             {/* Warning advisory message */}
             <div className="bg-amber-50/50 border border-amber-200/50 rounded-2xl p-4 text-[11px] text-amber-900 space-y-2 leading-relaxed">
-              <p className="font-extrabold flex items-center gap-1.5 uppercase tracking-wider text-[10px] text-amber-850">
-                ⚠️ Administrative Access Warning
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-extrabold flex items-center gap-1.5 uppercase tracking-wider text-[10px] text-amber-850">
+                  ⚠️ Administrative Password Reset
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSecurityModalOpen(false);
+                    setActiveTab('audit');
+                  }}
+                  className="text-[10px] font-black uppercase text-indigo-700 hover:underline cursor-pointer"
+                >
+                  Manage Roles & Add Mestris →
+                </button>
+              </div>
               <p>
-                As the <strong>Contractor (Admin)</strong>, you have the absolute authority to oversee, inspect, and reset the passwords of all platform supervisors. Updated keys synchronize with on-site devices and cloud-backups instantly.
+                Reset passwords for any registered user below. Passwords are stored as scrypt hashes in Supabase and never displayed in plaintext.
               </p>
             </div>
 
             {/* List of user credentials */}
             <div className="space-y-4">
-              {['u1', 'u2', 'u3'].map(uid => {
-                // Find matching user from our live DB states or default back to seeded placeholders
-                const u = users.find(user => user.id === uid) || (
-                  uid === 'u1' ? { id: 'u1', name: 'Lalithesh N', role: UserRole.ADMIN, email: 'lalithesh@lvconstructions.com', username: 'lalithesh', password: 'admin123' } :
-                  uid === 'u2' ? { id: 'u2', name: 'Varun Kashyap', role: UserRole.PROPRIETOR, email: 'varun@lvconstructions.com', username: 'varun', password: 'varun123' } :
-                  { id: 'u3', name: 'Nagaraj S', role: UserRole.MESTRI, email: 'nagaraj@lvconstructions.com', username: 'nagaraj', password: 'nagaraj123' }
-                );
-
-                const currentInputVal = securityEditPasswords[uid] !== undefined 
-                  ? securityEditPasswords[uid] 
-                  : u.password;
-
-                const isPassVisible = visiblePasswords[uid];
+              {users.map(u => {
+                const currentInputVal = securityEditPasswords[u.id] || '';
+                const isPassVisible = visiblePasswords[u.id];
 
                 return (
-                  <div key={uid} className="p-4 rounded-2xl border border-slate-150 bg-slate-50/50 hover:bg-slate-50 space-y-3 transition-colors">
+                  <div key={u.id} className="p-4 rounded-2xl border border-slate-150 bg-slate-50/50 hover:bg-slate-50 space-y-3 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="min-w-0">
                         <h4 className="font-extrabold text-xs text-slate-800">{u.name}</h4>
@@ -1362,32 +1159,28 @@ export default function App() {
                           Email: {u.email} • User: {u.username}
                         </p>
                       </div>
-                      <span className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded-full ${
-                        uid === 'u1' ? 'bg-blue-50 text-blue-650 border border-blue-200' :
-                        uid === 'u2' ? 'bg-purple-50 text-purple-650 border border-purple-200' :
-                        'bg-amber-50 text-amber-700 border border-amber-200'
-                      }`}>
+                      <span className="text-[8.5px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                         {u.role}
                       </span>
                     </div>
 
-                    {/* Password display & entry field */}
+                    {/* New Password entry field */}
                     <div className="space-y-1.5 pt-1">
-                      <label htmlFor={`edit-pass-input-${uid}`} className="text-[9px] font-black text-slate-450 uppercase tracking-widest block font-sans">Stored Secret Key</label>
+                      <label htmlFor={`edit-pass-input-${u.id}`} className="text-[9px] font-black text-slate-450 uppercase tracking-widest block font-sans">Set New Secret Key</label>
                       <div className="flex items-center gap-2">
                         <div className="relative flex-1">
                           <input
-                            id={`edit-pass-input-${uid}`}
+                            id={`edit-pass-input-${u.id}`}
                             type={isPassVisible ? 'text' : 'password'}
                             value={currentInputVal}
                             onChange={(e) => {
                               setSecurityEditPasswords(prev => ({
                                 ...prev,
-                                [uid]: e.target.value
+                                [u.id]: e.target.value
                               }));
                             }}
                             className="w-full pl-3 pr-24 py-2.5 bg-white border border-slate-200 focus:border-amber-500 rounded-xl text-xs outline-none transition-all font-mono font-bold text-slate-700 shadow-sm"
-                            placeholder="Enter new password"
+                            placeholder="Enter new password (min 4 chars)"
                           />
                           
                           {/* Visibility Selector */}
@@ -1396,28 +1189,28 @@ export default function App() {
                             onClick={() => {
                               setVisiblePasswords(prev => ({
                                 ...prev,
-                                [uid]: !prev[uid]
+                                [u.id]: !prev[u.id]
                               }));
                             }}
                             className="absolute right-2 top-1.5 px-2.5 py-1 hover:bg-slate-150 text-[9px] font-extrabold text-slate-500 hover:text-slate-700 uppercase rounded-lg cursor-pointer transition-colors select-none"
                           >
-                            {isPassVisible ? 'Hide Key' : 'Reveal Key'}
+                            {isPassVisible ? 'Hide' : 'Show'}
                           </button>
                         </div>
 
                         {/* Save Action */}
                         <button
                           type="button"
-                          disabled={isUpdatingPasswordId !== null || currentInputVal === u.password}
-                          onClick={() => handleUpdatePassword(uid, currentInputVal)}
+                          disabled={isUpdatingPasswordId !== null || currentInputVal.trim().length < 4}
+                          onClick={() => handleUpdatePassword(u.id, currentInputVal)}
                           className="px-4 py-2.5 bg-slate-900 hover:bg-slate-950 disabled:bg-slate-200 disabled:text-slate-400 text-white text-xs font-extrabold rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap min-w-[75px]"
                         >
-                          {isUpdatingPasswordId === uid ? (
+                          {isUpdatingPasswordId === u.id ? (
                             <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                           ) : (
                             <CheckCircle className="w-3.5 h-3.5" />
                           )}
-                          <span>Save</span>
+                          <span>Update</span>
                         </button>
                       </div>
                     </div>

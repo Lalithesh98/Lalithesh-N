@@ -10,16 +10,18 @@ import {
   X,
   AlertCircle 
 } from 'lucide-react';
-import { Project, Advance, UserRole, MaterialPurchase, LaborExpense, DailyExpense } from '../types';
+import { Project, Advance, UserRole, MaterialPurchase, LaborExpense, DailyExpense, User } from '../types';
 
 interface AdvanceManagerProps {
   activeProject: Project | null;
   projects: Project[];
+  users?: User[];
   advances: Advance[];
   purchases: MaterialPurchase[];
   laborExpenses: LaborExpense[];
   dailyExpenses: DailyExpense[];
-  currentUserRole: UserRole;
+  currentUserRole: string;
+  canManage?: boolean;
   currentUserName: string;
   onAddAdvance: (advanceData: Partial<Advance>) => Promise<void>;
 }
@@ -27,24 +29,27 @@ interface AdvanceManagerProps {
 export default function AdvanceManager({
   activeProject,
   projects,
+  users = [],
   advances,
   purchases,
   laborExpenses,
   dailyExpenses,
   currentUserRole,
+  canManage,
   currentUserName,
   onAddAdvance,
 }: AdvanceManagerProps) {
 
+  const defaultMestri = activeProject?.assignedMestriName || users.find(u => u.role === UserRole.MESTRI)?.name || '';
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [projectId, setProjectId] = useState(activeProject?.id || '');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [paymentMode, setPaymentMode] = useState('UPI / Bank Transfer');
   const [remarks, setRemarks] = useState('');
-  const [receivedBy, setReceivedBy] = useState('Nagaraj S (Site Supervisor)');
+  const [receivedBy, setReceivedBy] = useState(defaultMestri);
 
-  const isAdmin = currentUserRole === UserRole.ADMIN;
+  const isAdmin = canManage ?? currentUserRole === UserRole.ADMIN;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +74,8 @@ export default function AdvanceManager({
     setDate(new Date().toISOString().split('T')[0]);
     setPaymentMode('UPI / Bank Transfer');
     setRemarks('');
-    setReceivedBy('Nagaraj S (Site Supervisor)');
+    const targetProj = projects.find(p => p.id === projectId) || activeProject;
+    setReceivedBy(targetProj?.assignedMestriName || users.find(u => u.role === UserRole.MESTRI)?.name || '');
   };
 
   // Compute calculated metrics
@@ -87,7 +93,14 @@ export default function AdvanceManager({
   const totalDaily = projectDaily.reduce((sum, d) => sum + d.amount, 0);
   const totalSubmittedExpenses = totalMaterial + totalLabor + totalDaily;
 
-  const remainingAdvance = totalAdvancesGiven - totalSubmittedExpenses;
+  const paidMaterial = projectPurchases.reduce((sum, m) => {
+    if (m.paidAmount !== undefined) return sum + m.paidAmount;
+    return sum + (m.paymentStatus !== 'In Credit' ? m.totalAmount : 0);
+  }, 0);
+  const paidLabor = projectLabor.filter(l => l.paymentStatus !== 'In Credit').reduce((sum, l) => sum + l.totalWage, 0);
+  const paidDaily = projectDaily.filter(d => d.paymentStatus !== 'In Credit').reduce((sum, d) => sum + d.amount, 0);
+
+  const remainingAdvance = totalAdvancesGiven - (paidMaterial + paidLabor + paidDaily);
 
   return (
     <div id="advance-manager-container" className="space-y-6">
@@ -213,12 +226,18 @@ export default function AdvanceManager({
                     <input
                       id="adv-received-by"
                       type="text"
-                      placeholder="e.g. Nagaraj S"
+                      list="site-mestri-options"
+                      placeholder="Select or type supervisor name"
                       required
                       value={receivedBy}
                       onChange={(e) => setReceivedBy(e.target.value)}
                       className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 outline-none"
                     />
+                    <datalist id="site-mestri-options">
+                      {users.map((u) => (
+                        <option key={u.id} value={u.name}>{u.name} ({u.role})</option>
+                      ))}
+                    </datalist>
                   </div>
 
                   <div className="space-y-1">
@@ -289,7 +308,7 @@ export default function AdvanceManager({
           <div className={`${isAdmin ? 'xl:col-span-2' : 'xl:col-span-3'} bg-white border border-slate-100 rounded-2xl p-5 shadow-sm space-y-4`}>
             <div className="space-y-1">
               <h3 className="font-extrabold text-slate-800 text-base">Advance Ledger List</h3>
-              <p className="text-xs text-slate-400">Chronological list of all advances issued to site supervisor Nagaraj S for project {activeProject.projectName}.</p>
+              <p className="text-xs text-slate-400">Chronological list of all advances issued to {activeProject.assignedMestriName || 'site supervisors'} for project {activeProject.projectName}.</p>
             </div>
 
             {filteredAdvances.length === 0 ? (

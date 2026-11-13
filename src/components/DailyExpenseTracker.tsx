@@ -22,9 +22,11 @@ import { Project, DailyExpense, DailyExpenseCategory, UserRole, PaymentStatus } 
 interface DailyExpenseTrackerProps {
   activeProject: Project | null;
   dailyExpenses: DailyExpense[];
-  currentUserRole: UserRole;
+  currentUserRole: string;
+  canWrite?: boolean;
   currentUserName: string;
   onAddDailyExpense: (dailyData: Partial<DailyExpense>) => Promise<void>;
+  onSettleDaily?: (dailyId: string) => Promise<void>;
   onPreviewBill: (billUrl: string) => void;
 }
 
@@ -32,8 +34,10 @@ export default function DailyExpenseTracker({
   activeProject,
   dailyExpenses,
   currentUserRole,
+  canWrite,
   currentUserName,
   onAddDailyExpense,
+  onSettleDaily,
   onPreviewBill,
 }: DailyExpenseTrackerProps) {
 
@@ -48,7 +52,7 @@ export default function DailyExpenseTracker({
   const [fileName, setFileName] = useState('');
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(PaymentStatus.PAID);
 
-  const canEdit = currentUserRole === UserRole.ADMIN || currentUserRole === UserRole.MESTRI;
+  const canEdit = canWrite ?? (currentUserRole === UserRole.ADMIN || currentUserRole === UserRole.MESTRI);
 
   // Handle bill file upload via FileReader (converting to Base64 dataURL)
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -339,15 +343,26 @@ export default function DailyExpenseTracker({
 
                       <div className="flex items-center justify-between text-[10px] text-slate-400 border-t border-slate-50 pt-2 pb-0.5 font-medium">
                         <span>Logger: <strong className="text-slate-600 truncate">{d.enteredBy}</strong></span>
-                        {d.billUrl && (
-                          <button
-                            id={`preview-voucher-btn-${d.id}`}
-                            onClick={() => onPreviewBill(d.billUrl!)}
-                            className="flex items-center gap-1.5 px-2.5 py-1 bg-sky-50 text-sky-600 font-bold rounded-lg transition-colors cursor-pointer text-[9px]"
-                          >
-                            <Eye className="w-3.5 h-3.5" /> View Voucher
-                          </button>
-                        )}
+                        <div className="flex items-center gap-1.5">
+                          {canEdit && onSettleDaily && d.paymentStatus === PaymentStatus.CREDIT && (
+                            <button
+                              type="button"
+                              onClick={() => onSettleDaily(d.id)}
+                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-colors cursor-pointer text-[9px]"
+                            >
+                              Mark Paid
+                            </button>
+                          )}
+                          {d.billUrl && (
+                            <button
+                              id={`preview-voucher-btn-${d.id}`}
+                              onClick={() => onPreviewBill(d.billUrl!)}
+                              className="flex items-center gap-1.5 px-2.5 py-1 bg-sky-50 text-sky-600 font-bold rounded-lg transition-colors cursor-pointer text-[9px]"
+                            >
+                              <Eye className="w-3.5 h-3.5" /> View Voucher
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );

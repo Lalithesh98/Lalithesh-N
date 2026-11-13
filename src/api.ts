@@ -1,124 +1,152 @@
-import { 
-  Project, 
-  Advance, 
-  MaterialPurchase, 
-  LaborExpense, 
-  DailyExpense, 
-  User 
+import {
+  Advance,
+  DailyExpense,
+  LaborExpense,
+  MaterialPurchase,
+  Project,
+  RoleDefinition,
+  StagePhoto,
+  TaxInvoice,
+  User,
 } from './types';
 
-// Standardized fetch wrapper
+const TOKEN_STORAGE_KEY = 'cms_session_token';
+
+export function getStoredToken(): string | null {
+  return localStorage.getItem(TOKEN_STORAGE_KEY);
+}
+
+export function setStoredToken(token: string | null) {
+  if (token) localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  else localStorage.removeItem(TOKEN_STORAGE_KEY);
+}
+
 async function apiCall<T>(url: string, method = 'GET', body?: any): Promise<T> {
-  const options: RequestInit = {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-    },
+  const token = getStoredToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
   };
-  if (body) {
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const options: RequestInit = { method, headers };
+  if (body !== undefined) {
     options.body = JSON.stringify(body);
   }
 
   const response = await fetch(url, options);
   if (!response.ok) {
     const errData = await response.json().catch(() => ({}));
-    throw new Error(errData.error || `HTTP error! status: ${response.status}`);
+    const err: any = new Error(errData.error || `HTTP error! status: ${response.status}`);
+    err.status = response.status;
+    throw err;
   }
   return response.json() as Promise<T>;
 }
 
 export const appApi = {
-  // Fetch complete DB state (Includes projects, advances, purchases, labor, daily expenses, logs, users, notifications)
-  getData: async () => {
-    return apiCall<any>('/api/data');
-  },
+  getLoginOptions: async () =>
+    apiCall<{ users: User[]; roles: RoleDefinition[] }>('/api/public/login-options'),
 
-  // Auth login
-  login: async (email: string, password?: string) => {
-    return apiCall<{ status: string; user: User }>('/api/auth/login', 'POST', { email, password });
-  },
+  getData: async () => apiCall<any>('/api/data'),
 
-  // Projects
-  saveProject: async (projectData: Partial<Project> & { userId: string; userName: string }) => {
-    return apiCall<{ status: string; project: Project }>('/api/projects', 'POST', projectData);
-  },
+  getSupabaseConfig: async () =>
+    apiCall<{ url: string; anonKey: string; configured: boolean }>('/api/supabase-config'),
 
-  deleteProject: async (id: string, userId: string, userName: string) => {
-    return apiCall<{ status: string }>('/api/projects/' + id + '/delete', 'POST', { userId, userName });
-  },
+  login: async (email: string, password: string) =>
+    apiCall<{ status: string; user: User; token: string }>('/api/auth/login', 'POST', { email, password }),
 
-  // Advances
-  addAdvance: async (advanceData: Partial<Advance> & { userId: string; userName: string }) => {
-    return apiCall<{ status: string; advance: Advance }>('/api/advances', 'POST', advanceData);
-  },
+  impersonateRole: async (role: string, userId?: string) =>
+    apiCall<{ status: string; user: User; token: string }>('/api/auth/impersonate', 'POST', { role, userId }),
 
-  // Material Purchases
-  addPurchase: async (purchaseData: Partial<MaterialPurchase> & { userId: string; userName: string }) => {
-    return apiCall<{ status: string; purchase: MaterialPurchase }>('/api/purchases', 'POST', purchaseData);
-  },
+  saveRole: async (roleData: Partial<RoleDefinition>) =>
+    apiCall<{ status: string; role: RoleDefinition; roles: RoleDefinition[] }>('/api/roles', 'POST', roleData),
 
-  deletePurchase: async (id: string, userId: string, userName: string) => {
-    return apiCall<{ status: string }>('/api/purchases/' + id + '/delete', 'POST', { userId, userName });
-  },
+  deleteRole: async (id: string) =>
+    apiCall<{ status: string; roles: RoleDefinition[] }>(`/api/roles/${id}/delete`, 'POST', {}),
 
-  // Labor Expenses
-  addLabor: async (laborData: Partial<LaborExpense> & { userId: string; userName: string }) => {
-    return apiCall<{ status: string; labor: LaborExpense }>('/api/labor', 'POST', laborData);
-  },
+  createUser: async (userData: {
+    name: string;
+    email: string;
+    username: string;
+    password: string;
+    role: string;
+    assignedProjectIds?: string[];
+  }) => apiCall<{ status: string; user: User; users: User[] }>('/api/users', 'POST', userData),
 
-  // Daily Site Expenses
-  addDailyExpense: async (dailyData: Partial<DailyExpense> & { userId: string; userName: string }) => {
-    return apiCall<{ status: string; daily: DailyExpense }>('/api/daily-expenses', 'POST', dailyData);
-  },
+  deleteUser: async (id: string) =>
+    apiCall<{ status: string; users: User[] }>(`/api/users/${id}/delete`, 'POST', {}),
 
-  // Notification reading
-  markNotificationsRead: async (userId: string) => {
-    return apiCall<{ status: string }>('/api/notifications/read', 'POST', { userId });
-  },
+  saveProject: async (projectData: Partial<Project> & { userId?: string; userName?: string }) =>
+    apiCall<{ status: string; project: Project }>('/api/projects', 'POST', projectData),
 
-  // Import / restore DB state
-  importDatabase: async (dbData: any) => {
-    return apiCall<{ status: string; message: string }>('/api/database/import', 'POST', dbData);
-  },
+  deleteProject: async (id: string) =>
+    apiCall<{ status: string }>(`/api/projects/${id}/delete`, 'POST', {}),
 
-  // Get Firebase configuration
-  getFirebaseConfig: async () => {
-    return apiCall<any>('/api/firebase-config');
-  },
+  addAdvance: async (advanceData: Partial<Advance> & { userId?: string; userName?: string }) =>
+    apiCall<{ status: string; advance: Advance }>('/api/advances', 'POST', advanceData),
 
-  // Explicitly pull database state from cloud backup
-  pullDatabaseFromCloud: async () => {
-    return apiCall<{ status: string; message: string }>('/api/database/pull', 'POST');
-  },
+  addPurchase: async (purchaseData: Partial<MaterialPurchase> & { userId?: string; userName?: string }) =>
+    apiCall<{ status: string; purchase: MaterialPurchase }>('/api/purchases', 'POST', purchaseData),
 
-  // Explicitly push database state to cloud backup
-  pushDatabaseToCloud: async () => {
-    return apiCall<{ status: string; message: string }>('/api/database/push', 'POST');
-  },
+  deletePurchase: async (id: string) =>
+    apiCall<{ status: string }>(`/api/purchases/${id}/delete`, 'POST', {}),
 
-  // Update a user password
-  updateUserPassword: async (userId: string, newPassword: string, adminUserId: string, adminUserName: string) => {
-    return apiCall<{ status: string; message: string; users: any[] }>('/api/users/update-password', 'POST', {
+  settlePurchaseCredit: async (id: string, payAmount?: number) =>
+    apiCall<{ status: string; purchase: MaterialPurchase }>(`/api/purchases/${id}/settle`, 'POST', { payAmount }),
+
+  addLabor: async (laborData: Partial<LaborExpense> & { userId?: string; userName?: string }) =>
+    apiCall<{ status: string; labor: LaborExpense }>('/api/labor', 'POST', laborData),
+
+  settleLaborCredit: async (id: string) =>
+    apiCall<{ status: string; labor: LaborExpense }>(`/api/labor/${id}/settle`, 'POST', {}),
+
+  addDailyExpense: async (dailyData: Partial<DailyExpense> & { userId?: string; userName?: string }) =>
+    apiCall<{ status: string; daily: DailyExpense }>('/api/daily-expenses', 'POST', dailyData),
+
+  settleDailyCredit: async (id: string) =>
+    apiCall<{ status: string; daily: DailyExpense }>(`/api/daily-expenses/${id}/settle`, 'POST', {}),
+
+  addStagePhoto: async (photoData: Omit<StagePhoto, 'id' | 'uploadedBy'>) =>
+    apiCall<{ status: string; photo: StagePhoto }>('/api/stage-photos', 'POST', photoData),
+
+  deleteStagePhoto: async (id: string) =>
+    apiCall<{ status: string }>(`/api/stage-photos/${id}/delete`, 'POST', {}),
+
+  saveTaxInvoice: async (invoiceData: Omit<TaxInvoice, 'id'>) =>
+    apiCall<{ status: string; invoice: TaxInvoice }>('/api/tax-invoices', 'POST', invoiceData),
+
+  deleteTaxInvoice: async (id: string) =>
+    apiCall<{ status: string }>(`/api/tax-invoices/${id}/delete`, 'POST', {}),
+
+  markNotificationsRead: async () =>
+    apiCall<{ status: string }>('/api/notifications/read', 'POST', {}),
+
+  scanBillWithAI: async (dataUrl: string) =>
+    apiCall<{ status: string; extracted: Record<string, any> }>('/api/ai/scan-bill', 'POST', { dataUrl }),
+
+  updateUserPassword: async (userId: string, newPassword: string) =>
+    apiCall<{ status: string; message: string; users: User[] }>('/api/users/update-password', 'POST', {
       userId,
       newPassword,
-      adminUserId,
-      adminUserName,
-    });
-  },
+    }),
 
-  // Update full user profile credentials and details
   updateUserProfile: async (
     userId: string,
-    profileData: { name?: string; email?: string; username?: string; password?: string; role?: string },
-    adminUserId: string,
-    adminUserName: string
-  ) => {
-    return apiCall<{ status: string; message: string; users: any[] }>('/api/users/update-profile', 'POST', {
+    profileData: {
+      name?: string;
+      email?: string;
+      username?: string;
+      password?: string;
+      role?: string;
+      assignedProjectIds?: string[];
+    }
+  ) =>
+    apiCall<{ status: string; message: string; users: User[] }>('/api/users/update-profile', 'POST', {
       userId,
       ...profileData,
-      adminUserId,
-      adminUserName,
-    });
-  },
+    }),
 };
+
 export default appApi;

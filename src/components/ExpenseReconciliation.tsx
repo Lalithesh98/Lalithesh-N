@@ -106,7 +106,7 @@ export default function ExpenseReconciliation({
             {excessSpending ? (
               <div className="space-y-1">
                 <p className="text-sm font-bold">Excess Spending Detected!</p>
-                <p className="text-xs text-slate-500">Mestri Nagaraj S has recorded on-site purchases which exceed the total advances received by <strong className="text-red-700">₹{Math.abs(remainingBalance).toLocaleString()}</strong>. Please disburse advance capital immediately.</p>
+                <p className="text-xs text-slate-500">{activeProject.assignedMestriName || 'Site Supervisor'} has recorded on-site purchases which exceed the total advances received by <strong className="text-red-700">₹{Math.abs(remainingBalance).toLocaleString()}</strong>. Please disburse advance capital immediately.</p>
               </div>
             ) : (
               <div className="space-y-1">
@@ -194,7 +194,7 @@ export default function ExpenseReconciliation({
                     <ArrowDownCircle className="w-4.5 h-4.5 text-emerald-500" />
                     <div>
                       <span className="font-bold text-slate-800 block">Total Advances Issued</span>
-                      <span className="text-[10px] text-slate-400 font-semibold">Funds transferred to Nagaraj S (Mestri)</span>
+                      <span className="text-[10px] text-slate-400 font-semibold">Funds transferred to {activeProject.assignedMestriName || 'Site Supervisor'}</span>
                     </div>
                   </td>
                   <td className="px-5 py-4 text-right text-slate-400">-</td>

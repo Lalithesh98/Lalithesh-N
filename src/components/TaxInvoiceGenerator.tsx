@@ -13,30 +13,17 @@ import {
   CheckCircle,
   FileSpreadsheet
 } from 'lucide-react';
-import { Project } from '../types';
+import { Project, TaxInvoice, TaxInvoiceItem } from '../types';
 
 interface TaxInvoiceGeneratorProps {
   activeProject: Project | null;
   projects?: Project[];
+  savedInvoices?: TaxInvoice[];
+  onSaveInvoice?: (invoice: Omit<TaxInvoice, 'id'>) => Promise<void>;
+  onDeleteInvoice?: (id: string) => Promise<void>;
 }
 
-interface InvoiceItem {
-  slNo: number;
-  description: string;
-  qty: number;
-  rate: number;
-  amount: number;
-}
-
-interface RaisedInvoice {
-  id: string;
-  invoiceNo: string;
-  date: string;
-  projectName: string;
-  siteName: string;
-  clientName: string;
-  grandTotal: number;
-}
+type InvoiceItem = TaxInvoiceItem;
 
 // Convert numbers into standard Indian Words
 function convertToIndianWords(amount: number): string {
@@ -103,7 +90,13 @@ function convertToIndianWords(amount: number): string {
   return str.trim() + ' Only';
 }
 
-export default function TaxInvoiceGenerator({ activeProject, projects = [] }: TaxInvoiceGeneratorProps) {
+export default function TaxInvoiceGenerator({
+  activeProject,
+  projects = [],
+  savedInvoices = [],
+  onSaveInvoice,
+  onDeleteInvoice,
+}: TaxInvoiceGeneratorProps) {
   
   // Header section states
   const [invoiceNo, setInvoiceNo] = useState('01/2026-27');
@@ -148,7 +141,6 @@ export default function TaxInvoiceGenerator({ activeProject, projects = [] }: Ta
   ]);
 
   const [savingStatus, setSavingStatus] = useState<string | null>(null);
-  const [savedInvoices, setSavedInvoices] = useState<RaisedInvoice[]>([]);
 
   // Monitor active project changes to auto-fill details if available
   useEffect(() => {
@@ -161,14 +153,6 @@ export default function TaxInvoiceGenerator({ activeProject, projects = [] }: Ta
       }
     }
   }, [activeProject]);
-
-  // Load registered invoices history
-  useEffect(() => {
-    const raw = localStorage.getItem('lv_raised_invoices');
-    if (raw) {
-      setSavedInvoices(JSON.parse(raw));
-    }
-  }, []);
 
   // Compute calculated values
   const subTotal = items.reduce((sum, item) => sum + item.amount, 0);
@@ -208,22 +192,26 @@ export default function TaxInvoiceGenerator({ activeProject, projects = [] }: Ta
     setItems(filtered);
   };
 
-  const handleSaveInvoice = () => {
-    const raised: RaisedInvoice = {
-      id: `inv_${Date.now()}`,
+  const handleSaveInvoice = async () => {
+    if (!onSaveInvoice) return;
+    await onSaveInvoice({
+      projectId: activeProject?.id || null,
       invoiceNo,
       date: invoiceDate,
       projectName: activeProject?.projectName || 'General Site',
       siteName,
       clientName,
-      grandTotal
-    };
+      grandTotal,
+      items,
+      metadata: {
+        clientAddress,
+        clientGst,
+        clientState,
+        clientStateCode,
+      },
+    });
 
-    const updated = [raised, ...savedInvoices];
-    setSavedInvoices(updated);
-    localStorage.setItem('lv_raised_invoices', JSON.stringify(updated));
-
-    setSavingStatus('Tax invoice recorded successfully');
+    setSavingStatus('Tax invoice saved to Supabase');
     setTimeout(() => setSavingStatus(null), 3000);
   };
 
@@ -728,7 +716,11 @@ export default function TaxInvoiceGenerator({ activeProject, projects = [] }: Ta
                       setInvoiceDate(inv.date);
                       setSiteName(inv.siteName);
                       setClientName(inv.clientName);
-                      // Set items if matches mock or stored.
+                      if (Array.isArray(inv.items) && inv.items.length > 0) setItems(inv.items);
+                      if (inv.metadata?.clientAddress) setClientAddress(inv.metadata.clientAddress);
+                      if (inv.metadata?.clientGst) setClientGst(inv.metadata.clientGst);
+                      if (inv.metadata?.clientState) setClientState(inv.metadata.clientState);
+                      if (inv.metadata?.clientStateCode) setClientStateCode(inv.metadata.clientStateCode);
                     }}
                     className="text-[9px] font-black uppercase text-blue-600 hover:text-blue-700 cursor-pointer"
                   >
@@ -736,11 +728,7 @@ export default function TaxInvoiceGenerator({ activeProject, projects = [] }: Ta
                   </button>
 
                   <button
-                    onClick={() => {
-                      const filterLogs = savedInvoices.filter(i => i.id !== inv.id);
-                      setSavedInvoices(filterLogs);
-                      localStorage.setItem('lv_raised_invoices', JSON.stringify(filterLogs));
-                    }}
+                    onClick={() => onDeleteInvoice && onDeleteInvoice(inv.id)}
                     className="text-[9px] font-bold text-rose-500 hover:text-rose-600 cursor-pointer"
                   >
                     Delete log

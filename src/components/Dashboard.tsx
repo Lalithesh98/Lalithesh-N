@@ -29,7 +29,7 @@ interface DashboardProps {
   purchases: MaterialPurchase[];
   laborExpenses: LaborExpense[];
   dailyExpenses: DailyExpense[];
-  currentUserRole: UserRole;
+  currentUserRole: string;
   onChangeProject: (project: Project) => void;
 }
 

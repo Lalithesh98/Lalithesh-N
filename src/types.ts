@@ -1,14 +1,40 @@
 export enum UserRole {
   ADMIN = 'Admin', // Contractor (Admin)
-  PROPRIETOR = 'Proprietor', // Owner/Owner
+  PROPRIETOR = 'Proprietor', // Owner
   MESTRI = 'Mestri', // Site Supervisor
+}
+
+export type AppTab =
+  | 'dashboard'
+  | 'projects'
+  | 'advances'
+  | 'materials'
+  | 'labor'
+  | 'daily'
+  | 'reconciliation'
+  | 'documents'
+  | 'reports'
+  | 'audit'
+  | 'photos';
+
+export interface RoleDefinition {
+  id: string;
+  name: string;
+  description: string;
+  allowedTabs: AppTab[];
+  canWriteExpenses: boolean;
+  canManageProjects: boolean;
+  canManageRoles: boolean;
+  isSystem: boolean;
 }
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
+  role: string;
+  username?: string;
+  assignedProjectIds?: string[];
 }
 
 export enum ProjectStatus {
@@ -32,6 +58,8 @@ export interface Project {
   totalBudget: number;
   status: ProjectStatus;
   isDeleted: boolean;
+  assignedMestriId?: string;
+  assignedMestriName?: string;
 }
 
 export interface Advance {
@@ -72,7 +100,7 @@ export interface MaterialPurchase {
   rate: number;
   totalAmount: number;
   invoiceNo: string;
-  billUrl?: string; // Data URI / Base64 string for direct browser preview
+  billUrl?: string; // Supabase Storage URL or Data URI
   enteredBy: string; // User Name/ID
   isDeleted: boolean; // For soft delete
   paymentStatus?: PaymentStatus; // Paid or In Credit
@@ -123,9 +151,40 @@ export interface DailyExpense {
   category: DailyExpenseCategory;
   description: string;
   amount: number;
-  billUrl?: string; // Data URI / Base64 string for direct browser preview
+  billUrl?: string; // Supabase Storage URL or Data URI
   enteredBy: string;
   paymentStatus?: PaymentStatus; // Paid or In Credit
+}
+
+export interface StagePhoto {
+  id: string;
+  projectId: string;
+  stageKey: string;
+  photoUrl: string;
+  remarks: string;
+  uploadedBy: string;
+  date: string;
+}
+
+export interface TaxInvoiceItem {
+  slNo: number;
+  description: string;
+  qty: number;
+  rate: number;
+  amount: number;
+}
+
+export interface TaxInvoice {
+  id: string;
+  projectId?: string | null;
+  invoiceNo: string;
+  date: string;
+  projectName: string;
+  siteName: string;
+  clientName: string;
+  grandTotal: number;
+  items?: TaxInvoiceItem[];
+  metadata?: Record<string, any>;
 }
 
 export interface AuditLog {

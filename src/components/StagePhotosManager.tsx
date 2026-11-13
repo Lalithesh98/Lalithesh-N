@@ -17,22 +17,41 @@ import {
   Play,
   Download
 } from 'lucide-react';
-import { Project, UserRole } from '../types';
+import { Project, StagePhoto, UserRole } from '../types';
 
 interface StagePhotosManagerProps {
   activeProject: Project | null;
-  currentUserRole: UserRole;
+  photos: StagePhoto[];
+  currentUserRole: string;
+  canWrite?: boolean;
   currentUserName: string;
+  onAddPhoto: (photo: Omit<StagePhoto, 'id' | 'uploadedBy'>) => Promise<void>;
+  onDeletePhoto: (photoId: string) => Promise<void>;
 }
 
-export interface StagePhoto {
-  id: string;
-  projectId: string;
-  stageKey: string;
-  photoUrl: string; // Base64 or Unsplash fallback
-  remarks: string;
-  uploadedBy: string;
-  date: string;
+async function compressImageIfNeeded(dataUrl: string): Promise<string> {
+  if (!dataUrl.startsWith('data:image/')) return dataUrl;
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxDim = 1600;
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        const scale = Math.min(maxDim / width, maxDim / height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return resolve(dataUrl);
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', 0.8));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
 }
 
 interface MilestoneStage {
@@ -55,73 +74,28 @@ const CONSTRUCT_STAGES: MilestoneStage[] = [
   { key: 'handover', title: 'Completion & Key Handover', description: 'De-shuttering cleanup, safety cert auditing, and handing keys to owner', typicalWeight: '100%' }
 ];
 
-// Seed stock photos of actual construction to ensure the portal looks highly professional right out of the box
-const DEFAULT_PRESETS: Omit<StagePhoto, 'id'>[] = [
-  {
-    projectId: 'all',
-    stageKey: 'excavation',
-    photoUrl: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=800&q=80',
-    remarks: 'Excavation to depth of 10 feet completed for primary grid columns. Ground leveled and approved.',
-    uploadedBy: 'Nagaraj S',
-    date: '2026-06-01'
-  },
-  {
-    projectId: 'all',
-    stageKey: 'foundation',
-    photoUrl: 'https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=800&q=80',
-    remarks: 'Reinforced concrete foundation casting completed. Footing reinforcement mats aligned by steelworkers.',
-    uploadedBy: 'Nagaraj S',
-    date: '2026-06-03'
-  },
-  {
-    projectId: 'all',
-    stageKey: 'pillars',
-    photoUrl: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80',
-    remarks: 'Pillars and columns framed and shuttered. Wet curing is active twice-daily.',
-    uploadedBy: 'Nagaraj S',
-    date: '2026-06-05'
-  }
-];
-
 export default function StagePhotosManager({
   activeProject,
+  photos,
   currentUserRole,
+  canWrite,
   currentUserName,
+  onAddPhoto,
+  onDeletePhoto,
 }: StagePhotosManagerProps) {
 
-  const [photos, setPhotos] = useState<StagePhoto[]>([]);
   const [selectedStage, setSelectedStage] = useState<string>('excavation');
-  
+  const [isUploading, setIsUploading] = useState(false);
+
   // Upload photo form states
   const [dragActive, setDragActive] = useState(false);
   const [photoInput, setPhotoInput] = useState<string>('');
   const [remarksInput, setRemarksInput] = useState<string>('');
   const [dateInput, setDateInput] = useState<string>(new Date().toISOString().split('T')[0]);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  
+
   // Zoom light box
   const [lightboxImage, setLightboxImage] = useState<StagePhoto | null>(null);
-
-  // Load photos from local storage
-  useEffect(() => {
-    const raw = localStorage.getItem('lv_stage_photos');
-    if (raw) {
-      setPhotos(JSON.parse(raw));
-    } else {
-      // Seed initial photos for high-end look
-      const seeded: StagePhoto[] = DEFAULT_PRESETS.map((p, idx) => ({
-        ...p,
-        id: `photo_seed_${idx}`
-      }));
-      setPhotos(seeded);
-      localStorage.setItem('lv_stage_photos', JSON.stringify(seeded));
-    }
-  }, []);
-
-  const savePhotos = (updated: StagePhoto[]) => {
-    setPhotos(updated);
-    localStorage.setItem('lv_stage_photos', JSON.stringify(updated));
-  };
 
   if (!activeProject) {
     return (
@@ -135,8 +109,8 @@ export default function StagePhotosManager({
     );
   }
 
-  // Filter photos for current project (we match either standard seed 'all' or activeProject.id)
-  const projectPhotos = photos.filter(p => p.projectId === 'all' || p.projectId === activeProject.id);
+  // Filter photos for current project
+  const projectPhotos = photos.filter(p => p.projectId === activeProject.id);
   
   // Group photos by stage key
   const getPhotosForStage = (key: string) => projectPhotos.filter(p => p.stageKey === key);
@@ -151,16 +125,16 @@ export default function StagePhotosManager({
       return;
     }
 
-    // Limit to 5MB for storage stability
-    if (file.size > 5 * 1024 * 1024) {
-      setUploadError('Image size exceeds 5MB limit. Please compress first.');
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('Image size exceeds 10MB limit.');
       return;
     }
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       if (event.target?.result) {
-        setPhotoInput(event.target.result as string);
+        const compressed = await compressImageIfNeeded(event.target.result as string);
+        setPhotoInput(compressed);
         setUploadError(null);
       }
     };
@@ -193,15 +167,16 @@ export default function StagePhotosManager({
         setUploadError('Only image files are permitted (JPG, PNG, WEBP).');
         return;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        setUploadError('Image size exceeds 5MB limit. Please compress first.');
+      if (file.size > 10 * 1024 * 1024) {
+        setUploadError('Image size exceeds 10MB limit.');
         return;
       }
 
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         if (event.target?.result) {
-          setPhotoInput(event.target.result as string);
+          const compressed = await compressImageIfNeeded(event.target.result as string);
+          setPhotoInput(compressed);
           setUploadError(null);
         }
       };
@@ -211,7 +186,6 @@ export default function StagePhotosManager({
 
     // 2. Secondary path: Retrieve dragged image elements or links from web sources
     try {
-      // Look for dropped HTML markup (handles dragging/copying direct image element from websites/tabs)
       const html = e.dataTransfer.getData('text/html');
       let foundUrl = '';
 
@@ -222,14 +196,12 @@ export default function StagePhotosManager({
         }
       }
 
-      // Fallback: search common text URL formats
       if (!foundUrl) {
         foundUrl = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('URL') || e.dataTransfer.getData('text/plain');
       }
 
       if (foundUrl && foundUrl.trim()) {
         const cleanUrl = foundUrl.trim();
-        // Allow HTTP addresses, secure HTTPS addresses, or inline base64 data URLs
         if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') || cleanUrl.startsWith('data:image/')) {
           setPhotoInput(cleanUrl);
           setUploadError(null);
@@ -243,22 +215,22 @@ export default function StagePhotosManager({
     setUploadError('No valid image file or web photo link detected.');
   };
 
-  // Clipboard Paste Support for high flexibility (Copy & Paste images)
+  // Clipboard Paste Support
   const handlePaste = (e: React.ClipboardEvent) => {
-    // 1. Look for pasted file streams (such as screenshots, printscreen or copied files)
     const items = e.clipboardData.items;
     for (let i = 0; i < items.length; i++) {
       if (items[i].type.startsWith('image/')) {
         const file = items[i].getAsFile();
         if (file) {
-          if (file.size > 5 * 1024 * 1024) {
-            setUploadError('Pasted image size exceeds the 5MB limit.');
+          if (file.size > 10 * 1024 * 1024) {
+            setUploadError('Pasted image size exceeds the 10MB limit.');
             return;
           }
           const reader = new FileReader();
-          reader.onload = (event) => {
+          reader.onload = async (event) => {
             if (event.target?.result) {
-              setPhotoInput(event.target.result as string);
+              const compressed = await compressImageIfNeeded(event.target.result as string);
+              setPhotoInput(compressed);
               setUploadError(null);
             }
           };
@@ -268,7 +240,6 @@ export default function StagePhotosManager({
       }
     }
 
-    // 2. Look for pasted URL text strings or inline image embeds
     try {
       const text = e.clipboardData.getData('text/plain');
       if (text && (text.startsWith('http://') || text.startsWith('https://') || text.startsWith('data:image/'))) {
@@ -294,36 +265,35 @@ export default function StagePhotosManager({
     }
   };
 
-  const handlePhotoSubmit = (e: React.FormEvent) => {
+  const handlePhotoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!photoInput) {
       setUploadError('Please select a photo file or drag an image into the upload block.');
       return;
     }
 
-    const newPhoto: StagePhoto = {
-      id: `photo_${Date.now()}`,
-      projectId: activeProject.id,
-      stageKey: selectedStage,
-      photoUrl: photoInput,
-      remarks: remarksInput.trim() || `Recorded status photo for ${CONSTRUCT_STAGES.find(s => s.key === selectedStage)?.title}.`,
-      uploadedBy: currentUserName,
-      date: dateInput
-    };
-
-    const updated = [newPhoto, ...photos];
-    savePhotos(updated);
-    
-    // Reset fields
-    setPhotoInput('');
-    setRemarksInput('');
+    setIsUploading(true);
     setUploadError(null);
+    try {
+      await onAddPhoto({
+        projectId: activeProject.id,
+        stageKey: selectedStage,
+        photoUrl: photoInput,
+        remarks: remarksInput.trim() || `Recorded status photo for ${CONSTRUCT_STAGES.find(s => s.key === selectedStage)?.title}.`,
+        date: dateInput,
+      });
+      setPhotoInput('');
+      setRemarksInput('');
+    } catch (err: any) {
+      setUploadError(err.message || 'Failed uploading stage photo.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const handleDeletePhoto = (photoId: string) => {
+  const handleDeletePhoto = async (photoId: string) => {
     if (window.confirm('Do you really want to delete this development photo record from logs?')) {
-      const filtered = photos.filter(p => p.id !== photoId);
-      savePhotos(filtered);
+      await onDeletePhoto(photoId);
       if (lightboxImage?.id === photoId) setLightboxImage(null);
     }
   };
@@ -352,7 +322,7 @@ export default function StagePhotosManager({
   const computedProgressPercent = Math.round((completedStagesList.length / CONSTRUCT_STAGES.length) * 100);
 
   // Mestris have write permissions, Administrators have full permission
-  const hasWritePermission = currentUserRole === UserRole.ADMIN || currentUserRole === UserRole.MESTRI;
+  const hasWritePermission = canWrite ?? (currentUserRole === UserRole.ADMIN || currentUserRole === UserRole.MESTRI);
 
   return (
     <div id="stage-photos-manager-container" className="space-y-6">
@@ -724,9 +694,10 @@ export default function StagePhotosManager({
                     <div className="flex justify-end pt-1">
                       <button
                         type="submit"
-                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        disabled={isUploading}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded-xl text-xs font-black shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
                       >
-                        <Plus className="w-4 h-4" /> Save Visual Stage Record
+                        <Plus className="w-4 h-4" /> {isUploading ? 'Uploading to Supabase...' : 'Save Visual Stage Record'}
                       </button>
                     </div>
 
@@ -737,7 +708,7 @@ export default function StagePhotosManager({
                     <div>
                       <p className="font-extrabold">View Only Authorized</p>
                       <p className="text-[10px] text-amber-600 font-semibold leading-relaxed mt-0.5">
-                        Your account ({currentUserRole}) is structured as an Auditor or Partner. Concrete photo updates are managed by the site supervisor Ramesh Singh / Nagaraj S or the admin representative.
+                        Your account ({currentUserRole}) has read-only access for stage photos. Updates are managed by {activeProject.assignedMestriName || 'the assigned site supervisor'} or an authorized administrator.
                       </p>
                     </div>
                   </div>

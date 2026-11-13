@@ -13,11 +13,13 @@ import {
   ChevronRight, 
   IndianRupee 
 } from 'lucide-react';
-import { Project, ProjectStatus, UserRole } from '../types';
+import { Project, ProjectStatus, User as AppUser, UserRole } from '../types';
 
 interface ProjectManagerProps {
   projects: Project[];
-  currentUserRole: UserRole;
+  users?: AppUser[];
+  currentUserRole: string;
+  canManage?: boolean;
   currentUserId: string;
   currentUserName: string;
   onSaveProject: (project: Partial<Project>) => Promise<void>;
@@ -26,7 +28,9 @@ interface ProjectManagerProps {
 
 export default function ProjectManager({
   projects,
+  users = [],
   currentUserRole,
+  canManage,
   currentUserId,
   currentUserName,
   onSaveProject,
@@ -45,8 +49,9 @@ export default function ProjectManager({
   const [startDate, setStartDate] = useState('');
   const [expectedEndDate, setExpectedEndDate] = useState('');
   const [status, setStatus] = useState<ProjectStatus>(ProjectStatus.ACTIVE);
+  const [assignedMestriId, setAssignedMestriId] = useState('');
 
-  const isAdmin = currentUserRole === UserRole.ADMIN;
+  const isAdmin = canManage ?? currentUserRole === UserRole.ADMIN;
 
   const handleEditClick = (p: Project) => {
     setEditingId(p.id);
@@ -57,6 +62,7 @@ export default function ProjectManager({
     setStartDate(p.startDate);
     setExpectedEndDate(p.expectedEndDate);
     setStatus(p.status);
+    setAssignedMestriId(p.assignedMestriId || '');
     setIsFormOpen(true);
   };
 
@@ -69,6 +75,7 @@ export default function ProjectManager({
     setStartDate(new Date().toISOString().split('T')[0]);
     setExpectedEndDate('');
     setStatus(ProjectStatus.ACTIVE);
+    setAssignedMestriId('');
     setIsFormOpen(true);
   };
 
@@ -76,6 +83,7 @@ export default function ProjectManager({
     e.preventDefault();
     if (!projectName.trim() || !siteName.trim() || !totalBudget) return;
 
+    const selectedMestri = users.find(u => u.id === assignedMestriId);
     await onSaveProject({
       id: editingId || undefined,
       projectName,
@@ -85,6 +93,8 @@ export default function ProjectManager({
       startDate,
       expectedEndDate,
       status,
+      assignedMestriId: assignedMestriId || undefined,
+      assignedMestriName: selectedMestri ? selectedMestri.name : '',
     });
 
     setIsFormOpen(false);
@@ -100,6 +110,7 @@ export default function ProjectManager({
     setStartDate('');
     setExpectedEndDate('');
     setStatus(ProjectStatus.ACTIVE);
+    setAssignedMestriId('');
   };
 
   const filteredProjects = projects.filter(
@@ -243,6 +254,23 @@ export default function ProjectManager({
                 </select>
               </div>
 
+              <div className="space-y-1">
+                <label htmlFor="site-mestri-select" className="text-xs font-bold text-slate-500 uppercase">Assigned Site Mestri / Supervisor</label>
+                <select
+                  id="site-mestri-select"
+                  value={assignedMestriId}
+                  onChange={(e) => setAssignedMestriId(e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm outline-none bg-slate-50/50 text-slate-700"
+                >
+                  <option value="">-- Unassigned / Any Supervisor --</option>
+                  {users.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name} ({u.role})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="flex gap-2 pt-2">
                 <button
                   id="save-project-btn"
@@ -317,6 +345,13 @@ export default function ProjectManager({
                       <div className="flex items-center justify-between">
                         <span className="text-slate-400 font-medium">Client</span>
                         <span className="text-slate-800">{p.clientName || 'N/A'}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400 font-medium">Site Mestri</span>
+                        <span className="text-slate-800 flex items-center gap-1">
+                          <User className="w-3.5 h-3.5 text-slate-400" />
+                          {p.assignedMestriName || 'Unassigned'}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-slate-400 font-medium">Timeline</span>

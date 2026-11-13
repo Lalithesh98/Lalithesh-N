@@ -16,17 +16,21 @@ import { Project, LaborExpense, WorkerType, UserRole, PaymentStatus } from '../t
 interface LaborExpenseTrackerProps {
   activeProject: Project | null;
   laborExpenses: LaborExpense[];
-  currentUserRole: UserRole;
+  currentUserRole: string;
+  canWrite?: boolean;
   currentUserName: string;
   onAddLabor: (laborData: Partial<LaborExpense>) => Promise<void>;
+  onSettleLabor?: (laborId: string) => Promise<void>;
 }
 
 export default function LaborExpenseTracker({
   activeProject,
   laborExpenses,
   currentUserRole,
+  canWrite,
   currentUserName,
   onAddLabor,
+  onSettleLabor,
 }: LaborExpenseTrackerProps) {
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -39,7 +43,7 @@ export default function LaborExpenseTracker({
   const [remarks, setRemarks] = useState('');
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(PaymentStatus.PAID);
 
-  const canEdit = currentUserRole === UserRole.ADMIN || currentUserRole === UserRole.MESTRI;
+  const canEdit = canWrite ?? (currentUserRole === UserRole.ADMIN || currentUserRole === UserRole.MESTRI);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +84,7 @@ export default function LaborExpenseTracker({
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 border border-slate-100 rounded-2xl shadow-sm">
         <div className="space-y-1">
           <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">Labor Wage Disbursements</h2>
-          <p className="text-xs text-slate-400">Track and authorize daily labor disbursements paid on site by supervisor Nagaraj S.</p>
+          <p className="text-xs text-slate-400">Track and authorize daily labor disbursements paid on site{activeProject?.assignedMestriName ? ` by ${activeProject.assignedMestriName}` : ''}.</p>
         </div>
 
         <div className="flex items-center gap-4">
@@ -305,13 +309,24 @@ export default function LaborExpenseTracker({
                           {lab.remarks || '-'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
-                            lab.paymentStatus === PaymentStatus.CREDIT
-                              ? 'bg-rose-50 text-rose-600 border-rose-100'
-                              : 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                          }`}>
-                            {lab.paymentStatus || PaymentStatus.PAID}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+                              lab.paymentStatus === PaymentStatus.CREDIT
+                                ? 'bg-rose-50 text-rose-600 border-rose-100'
+                                : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                            }`}>
+                              {lab.paymentStatus || PaymentStatus.PAID}
+                            </span>
+                            {canEdit && onSettleLabor && lab.paymentStatus === PaymentStatus.CREDIT && (
+                              <button
+                                type="button"
+                                onClick={() => onSettleLabor(lab.id)}
+                                className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[9px] font-bold cursor-pointer"
+                              >
+                                Mark Paid
+                              </button>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-right text-slate-950 font-black text-sm whitespace-nowrap">
                           ₹{lab.totalWage.toLocaleString('en-IN')}
