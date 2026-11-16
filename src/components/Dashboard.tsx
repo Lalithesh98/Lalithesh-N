@@ -9,7 +9,10 @@ import {
   AlertTriangle, 
   Calendar, 
   User as UserIcon, 
-  IndianRupee 
+  IndianRupee,
+  HandCoins,
+  CheckCircle2,
+  Clock
 } from 'lucide-react';
 import { 
   Project, 
@@ -19,13 +22,15 @@ import {
   DailyExpense, 
   MaterialCategory,
   UserRole,
-  PaymentStatus
+  PaymentStatus,
+  ProjectBorrowing
 } from '../types';
 
 interface DashboardProps {
   activeProject: Project | null;
   projects: Project[];
   advances: Advance[];
+  borrowings?: ProjectBorrowing[];
   purchases: MaterialPurchase[];
   laborExpenses: LaborExpense[];
   dailyExpenses: DailyExpense[];
@@ -37,6 +42,7 @@ export default function Dashboard({
   activeProject,
   projects,
   advances,
+  borrowings = [],
   purchases,
   laborExpenses,
   dailyExpenses,
@@ -96,6 +102,19 @@ export default function Dashboard({
 
   const remainingBudget = totalBudget - totalSpent;
   const remainingAdvance = totalAdvances - totalSpentPaid; // Outstanding in-credit sheets do not spend active cash advance!
+
+  // External Borrowings & Liabilities Aggregates
+  const projectBorrowings = borrowings.filter(b => b.projectId === pId);
+  const totalBorrowed = projectBorrowings.reduce((sum, b) => sum + b.amount, 0);
+  const totalRepaidDebt = projectBorrowings.reduce((sum, b) => sum + b.repaidAmount, 0);
+  const outstandingDebt = projectBorrowings.reduce((sum, b) => sum + b.balanceDue, 0);
+  const activeDebtCount = projectBorrowings.filter(b => b.balanceDue > 0).length;
+
+  // Real Operating Cash In Hand = (Advances Received + Borrowings) - (Paid Site Disbursements + Debt Repayments)
+  const trueCashInHand = (totalAdvances + totalBorrowed) - (totalSpentPaid + totalRepaidDebt);
+
+  // Net Distributable Profit Today = Money Received - Expenses Paid - Outstanding Friend Loans
+  const distributableProfitToday = totalAdvances - totalSpentPaid - outstandingDebt;
 
   // Percentage trackers
   const budgetUtilization = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
@@ -206,6 +225,30 @@ export default function Dashboard({
         </div>
       </div>
 
+      {/* Active Borrowing / Friend Debt Alert */}
+      {outstandingDebt > 0 && (
+        <div className="bg-gradient-to-r from-amber-50 to-rose-50 border-2 border-amber-200/80 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-amber-500 text-white rounded-xl shadow-xs shrink-0">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-extrabold text-amber-950">
+                Cash Flow Alert: ₹{outstandingDebt.toLocaleString('en-IN')} in Outstanding Friend Borrowings
+              </h4>
+              <p className="text-xs text-amber-800">
+                This project has {activeDebtCount} unsettled debt{activeDebtCount > 1 ? 's' : ''} to friends/lenders. These must be reimbursed before distributing partner profits!
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="px-3 py-1 bg-white border border-amber-300 text-amber-900 font-bold rounded-xl text-xs">
+              Net Profit After Debt: ₹{distributableProfitToday.toLocaleString('en-IN')}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Main Stats Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Budget Card */}
@@ -306,6 +349,52 @@ export default function Dashboard({
             <span className={`${remainingBudget < 0 ? 'text-red-500 font-bold' : 'text-slate-500 font-bold'}`}>
               {remainingBudget < 0 ? 'Overspent' : 'Under Budget'}
             </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Cash Flow & Friend Liabilities Panel */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-amber-500/10 text-amber-600 rounded-lg">
+              <HandCoins className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-extrabold text-slate-800">Cash Flow & Debt Reconciliation</h3>
+              <p className="text-[11px] text-slate-400">External friend loans injected vs. repayments and net distributable profit</p>
+            </div>
+          </div>
+          <span className="text-xs text-slate-500 font-semibold">
+            {projectBorrowings.length} total external borrowings recorded
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Borrowed</span>
+            <span className="text-lg font-black text-slate-800 mt-0.5 block">₹{totalBorrowed.toLocaleString('en-IN')}</span>
+            <span className="text-[10px] text-slate-500 font-medium">Injected from friends / sources</span>
+          </div>
+
+          <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Repaid to Lenders</span>
+            <span className="text-lg font-black text-emerald-600 mt-0.5 block">₹{totalRepaidDebt.toLocaleString('en-IN')}</span>
+            <span className="text-[10px] text-emerald-700 font-medium">Reimbursed back to friends</span>
+          </div>
+
+          <div className={`p-3.5 rounded-xl border ${outstandingDebt > 0 ? 'bg-rose-50/50 border-rose-200 text-rose-950' : 'bg-slate-50 border-slate-100'}`}>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 block">Pending Friend Debt</span>
+            <span className="text-lg font-black text-rose-700 mt-0.5 block">₹{outstandingDebt.toLocaleString('en-IN')}</span>
+            <span className="text-[10px] font-bold text-rose-600">
+              {outstandingDebt > 0 ? '⚠️ Unsettled liability' : 'Fully settled'}
+            </span>
+          </div>
+
+          <div className="bg-emerald-50/50 p-3.5 rounded-xl border border-emerald-100">
+            <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">Distributable Profit</span>
+            <span className="text-lg font-black text-emerald-700 mt-0.5 block">₹{distributableProfitToday.toLocaleString('en-IN')}</span>
+            <span className="text-[10px] text-emerald-800 font-medium">Client Money - Expenses - Debt</span>
           </div>
         </div>
       </div>

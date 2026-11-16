@@ -1,9 +1,11 @@
 import {
   Advance,
+  BorrowingRepayment,
   DailyExpense,
   LaborExpense,
   MaterialPurchase,
   Project,
+  ProjectBorrowing,
   RoleDefinition,
   StagePhoto,
   TaxInvoice,
@@ -86,6 +88,21 @@ export const appApi = {
 
   addAdvance: async (advanceData: Partial<Advance> & { userId?: string; userName?: string }) =>
     apiCall<{ status: string; advance: Advance }>('/api/advances', 'POST', advanceData),
+
+  getBorrowings: async (projectId?: string) =>
+    apiCall<{ borrowings: ProjectBorrowing[] }>(projectId ? `/api/borrowings?projectId=${projectId}` : '/api/borrowings'),
+
+  saveBorrowing: async (borrowingData: Partial<ProjectBorrowing> & { userId?: string; userName?: string }) =>
+    apiCall<{ status: string; borrowing: ProjectBorrowing }>('/api/borrowings', 'POST', borrowingData),
+
+  repayBorrowing: async (borrowingId: string, repaymentData: Partial<BorrowingRepayment> & { userId?: string; userName?: string }) =>
+    apiCall<{ status: string; borrowing: ProjectBorrowing; repayment: BorrowingRepayment }>(`/api/borrowings/${borrowingId}/repay`, 'POST', repaymentData),
+
+  deleteBorrowing: async (id: string) =>
+    apiCall<{ status: string }>(`/api/borrowings/${id}/delete`, 'POST', {}),
+
+  deleteBorrowingRepayment: async (repaymentId: string) =>
+    apiCall<{ status: string; borrowing: ProjectBorrowing }>(`/api/borrowings/repayments/${repaymentId}/delete`, 'POST', {}),
 
   addPurchase: async (purchaseData: Partial<MaterialPurchase> & { userId?: string; userName?: string }) =>
     apiCall<{ status: string; purchase: MaterialPurchase }>('/api/purchases', 'POST', purchaseData),

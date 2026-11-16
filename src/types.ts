@@ -8,6 +8,7 @@ export type AppTab =
   | 'dashboard'
   | 'projects'
   | 'advances'
+  | 'borrowings'
   | 'materials'
   | 'labor'
   | 'daily'
@@ -111,6 +112,8 @@ export interface MaterialPurchase {
   extraExpensesRemarks?: string;
   weightKg?: number;
   thicknessSpecs?: string;
+  paidByPartner?: string; // If partner paid from personal pocket
+  isPartnerPocket?: boolean;
 }
 
 export enum WorkerType {
@@ -133,6 +136,8 @@ export interface LaborExpense {
   remarks: string;
   enteredBy: string;
   paymentStatus?: PaymentStatus; // Paid or In Credit
+  paidByPartner?: string;
+  isPartnerPocket?: boolean;
 }
 
 export enum DailyExpenseCategory {
@@ -154,6 +159,8 @@ export interface DailyExpense {
   billUrl?: string; // Supabase Storage URL or Data URI
   enteredBy: string;
   paymentStatus?: PaymentStatus; // Paid or In Credit
+  paidByPartner?: string;
+  isPartnerPocket?: boolean;
 }
 
 export interface StagePhoto {
@@ -204,8 +211,58 @@ export interface Notification {
   projectId: string;
   projectName: string;
   message: string;
-  type: 'advance_issued' | 'purchase_recorded' | 'budget_exceeded' | 'large_expense' | 'low_advance_balance';
+  type:
+    | 'advance_issued'
+    | 'purchase_recorded'
+    | 'budget_exceeded'
+    | 'large_expense'
+    | 'low_advance_balance'
+    | 'borrowing_recorded'
+    | 'loan_repaid'
+    | 'loan_settled';
   date: string;
   amount?: number;
   isReadBy: string[]; // List of userIds who read it
+}
+
+export enum BorrowingStatus {
+  ACTIVE = 'Active',
+  PARTIALLY_REPAID = 'Partially Repaid',
+  SETTLED = 'Settled',
+}
+
+export interface BorrowingRepayment {
+  id: string;
+  borrowingId: string;
+  projectId: string;
+  date: string;
+  amount: number;
+  repaidBy: string; // Partner/Accountant who repaid it
+  paymentMode: string; // UPI / Bank Transfer / Cash / Cheque
+  referenceNo?: string; // UPI UTR or Txn ID
+  receiptUrl?: string; // Proof screenshot
+  remarks?: string;
+  createdAt?: string;
+}
+
+export interface ProjectBorrowing {
+  id: string;
+  projectId: string;
+  date: string;
+  lenderName: string; // Friend / Relative / Source name
+  lenderContact?: string; // Phone or UPI ID
+  borrowerName: string; // Partner who arranged/took the borrowing
+  amount: number; // Principal amount
+  interestAmount?: number; // Extra fee/interest, default 0
+  totalDue: number; // amount + (interestAmount || 0)
+  repaidAmount: number; // Sum of repayments made so far
+  balanceDue: number; // totalDue - repaidAmount
+  purpose: string; // e.g. "Urgent cement delivery payment"
+  dueDate?: string; // Target repayment date
+  status: BorrowingStatus; // Active | Partially Repaid | Settled
+  receiptUrl?: string; // Borrowing proof / agreement / UPI voucher
+  notes?: string;
+  repayments?: BorrowingRepayment[];
+  createdAt?: string;
+  updatedAt?: string;
 }

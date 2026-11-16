@@ -4,12 +4,15 @@ import {
   Advance,
   AppTab,
   AuditLog,
+  BorrowingRepayment,
+  BorrowingStatus,
   DailyExpense,
   LaborExpense,
   MaterialPurchase,
   Notification,
   PaymentStatus,
   Project,
+  ProjectBorrowing,
   RoleDefinition,
   StagePhoto,
   TaxInvoice,
@@ -222,6 +225,8 @@ export const mapPurchase = (r: any): MaterialPurchase => ({
   extraExpensesRemarks: r.extra_expenses_remarks || '',
   weightKg: r.weight_kg !== null && r.weight_kg !== undefined ? Number(r.weight_kg) : undefined,
   thicknessSpecs: r.thickness_specs || undefined,
+  paidByPartner: r.paid_by_partner || undefined,
+  isPartnerPocket: Boolean(r.is_partner_pocket),
 });
 
 export const mapLabor = (r: any): LaborExpense => ({
@@ -235,6 +240,8 @@ export const mapLabor = (r: any): LaborExpense => ({
   remarks: r.remarks || '',
   enteredBy: r.entered_by,
   paymentStatus: (r.payment_status as PaymentStatus) || undefined,
+  paidByPartner: r.paid_by_partner || undefined,
+  isPartnerPocket: Boolean(r.is_partner_pocket),
 });
 
 export const mapDaily = (r: any): DailyExpense => ({
@@ -247,6 +254,8 @@ export const mapDaily = (r: any): DailyExpense => ({
   billUrl: r.bill_url || '',
   enteredBy: r.entered_by,
   paymentStatus: (r.payment_status as PaymentStatus) || undefined,
+  paidByPartner: r.paid_by_partner || undefined,
+  isPartnerPocket: Boolean(r.is_partner_pocket),
 });
 
 export const mapStagePhoto = (r: any): StagePhoto => ({
@@ -294,3 +303,55 @@ export const mapNotification = (r: any): Notification => ({
   amount: r.amount !== null && r.amount !== undefined ? Number(r.amount) : undefined,
   isReadBy: Array.isArray(r.is_read_by) ? r.is_read_by : [],
 });
+
+export const mapRepayment = (r: any): BorrowingRepayment => ({
+  id: r.id,
+  borrowingId: r.borrowing_id,
+  projectId: r.project_id,
+  date: r.date,
+  amount: Number(r.amount) || 0,
+  repaidBy: r.repaid_by,
+  paymentMode: r.payment_mode || 'UPI / Bank Transfer',
+  referenceNo: r.reference_no || '',
+  receiptUrl: r.receipt_url || '',
+  remarks: r.remarks || '',
+  createdAt: r.created_at,
+});
+
+export const mapBorrowing = (r: any, repayments: BorrowingRepayment[] = []): ProjectBorrowing => {
+  const principal = Number(r.amount) || 0;
+  const interest = Number(r.interest_amount) || 0;
+  const totalDue = Number(r.total_due) || (principal + interest);
+  const repaid = Number(r.repaid_amount) || 0;
+  const balanceDue = Number(r.balance_due) !== undefined ? Number(r.balance_due) : Math.max(0, totalDue - repaid);
+
+  let status: BorrowingStatus = BorrowingStatus.ACTIVE;
+  if (r.status === 'Settled' || balanceDue <= 0) {
+    status = BorrowingStatus.SETTLED;
+  } else if (r.status === 'Partially Repaid' || repaid > 0) {
+    status = BorrowingStatus.PARTIALLY_REPAID;
+  }
+
+  return {
+    id: r.id,
+    projectId: r.project_id,
+    date: r.date,
+    lenderName: r.lender_name,
+    lenderContact: r.lender_contact || '',
+    borrowerName: r.borrower_name,
+    amount: principal,
+    interestAmount: interest,
+    totalDue,
+    repaidAmount: repaid,
+    balanceDue,
+    purpose: r.purpose || '',
+    dueDate: r.due_date || undefined,
+    status,
+    receiptUrl: r.receipt_url || '',
+    notes: r.notes || '',
+    repayments,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+};
+

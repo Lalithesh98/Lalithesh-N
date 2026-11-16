@@ -7,14 +7,24 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
 import {
+  BorrowingRepayment,
+  BorrowingStatus,
   DailyExpenseCategory,
   MaterialCategory,
   PaymentStatus,
+  ProjectBorrowing,
   ProjectStatus,
   RoleDefinition,
   UserRole,
   WorkerType,
 } from './src/types';
+import {
+  getBorrowingsFromDb,
+  saveBorrowingToDb,
+  addRepaymentToDb,
+  deleteBorrowingFromDb,
+  deleteRepaymentFromDb,
+} from './src/lib/borrowingService';
 import {
   getSupabaseAdmin,
   hashPassword,
@@ -54,40 +64,50 @@ function genId(prefix: string): string {
 }
 
 async function ensureDefaultRolesAndUsers() {
-  const { data: existingRoles, error: rolesErr } = await supabase.from('app_roles').select('id').limit(1);
-  if (!rolesErr && (!existingRoles || existingRoles.length === 0)) {
-    await supabase.from('app_roles').upsert([
-      {
-        id: 'role_admin',
-        name: 'Admin',
-        description: 'Full system control over sites, advances, expenses, role access, and user accounts.',
-        allowed_tabs: ['dashboard', 'projects', 'advances', 'materials', 'labor', 'daily', 'reconciliation', 'documents', 'reports', 'audit', 'photos'],
-        can_write_expenses: true,
-        can_manage_projects: true,
-        can_manage_roles: true,
-        is_system: true,
-      },
-      {
-        id: 'role_proprietor',
-        name: 'Proprietor',
-        description: 'Executive oversight, financial reconciliations, reports, documents, and stage progress.',
-        allowed_tabs: ['dashboard', 'reconciliation', 'documents', 'reports', 'photos'],
-        can_write_expenses: false,
-        can_manage_projects: false,
-        can_manage_roles: false,
-        is_system: false,
-      },
-      {
-        id: 'role_mestri',
-        name: 'Mestri',
-        description: 'On-site supervisor logging material purchases, labor wages, daily expenses, and stage photos.',
-        allowed_tabs: ['dashboard', 'materials', 'labor', 'daily', 'documents', 'photos'],
-        can_write_expenses: true,
-        can_manage_projects: false,
-        can_manage_roles: false,
-        is_system: false,
-      },
-    ], { onConflict: 'id' });
+  const { data: existingRoles, error: rolesErr } = await supabase.from('app_roles').select('*');
+  if (!rolesErr) {
+    if (!existingRoles || existingRoles.length === 0) {
+      await supabase.from('app_roles').upsert([
+        {
+          id: 'role_admin',
+          name: 'Admin',
+          description: 'Full system control over sites, advances, borrowings, expenses, role access, and user accounts.',
+          allowed_tabs: ['dashboard', 'projects', 'advances', 'borrowings', 'materials', 'labor', 'daily', 'reconciliation', 'documents', 'reports', 'audit', 'photos'],
+          can_write_expenses: true,
+          can_manage_projects: true,
+          can_manage_roles: true,
+          is_system: true,
+        },
+        {
+          id: 'role_proprietor',
+          name: 'Proprietor',
+          description: 'Executive oversight, financial reconciliations, borrowings, reports, documents, and stage progress.',
+          allowed_tabs: ['dashboard', 'borrowings', 'reconciliation', 'documents', 'reports', 'photos'],
+          can_write_expenses: false,
+          can_manage_projects: false,
+          can_manage_roles: false,
+          is_system: false,
+        },
+        {
+          id: 'role_mestri',
+          name: 'Mestri',
+          description: 'On-site supervisor logging material purchases, labor wages, daily expenses, and stage photos.',
+          allowed_tabs: ['dashboard', 'materials', 'labor', 'daily', 'documents', 'photos'],
+          can_write_expenses: true,
+          can_manage_projects: false,
+          can_manage_roles: false,
+          is_system: false,
+        },
+      ], { onConflict: 'id' });
+    } else {
+      // Ensure existing Admin and Proprietor roles include 'borrowings'
+      for (const r of existingRoles) {
+        if ((r.id === 'role_admin' || r.id === 'role_proprietor' || r.name === 'Admin' || r.name === 'Proprietor') &&
+            Array.isArray(r.allowed_tabs) && !r.allowed_tabs.includes('borrowings')) {
+          await supabase.from('app_roles').update({ allowed_tabs: [...r.allowed_tabs, 'borrowings'] }).eq('id', r.id);
+        }
+      }
+    }
   }
 
   const { data: existing, error } = await supabase.from('app_users').select('id').limit(1);
@@ -335,6 +355,10 @@ async function fetchCompleteDatabaseState(authUser?: SessionPayload) {
   let stagePhotos = (stagePhotosRes.data || []).map(mapStagePhoto);
   let notifications = (notifRes.data || []).map(mapNotification);
 
+  // Fetch borrowings & loan repayments
+  const borrowingsData = await getBorrowingsFromDb(supabase);
+  let borrowings = borrowingsData.borrowings;
+
   // Scope sites for site-restricted users (e.g., site-specific Mestris)
   if (authUser) {
     const me = users.find((u) => u.id === authUser.userId);
@@ -357,6 +381,7 @@ async function fetchCompleteDatabaseState(authUser?: SessionPayload) {
         dailyExpenses = dailyExpenses.filter((d) => allowedIds.has(d.projectId));
         stagePhotos = stagePhotos.filter((s) => allowedIds.has(s.projectId));
         notifications = notifications.filter((n) => allowedIds.has(n.projectId));
+        borrowings = borrowings.filter((b) => allowedIds.has(b.projectId));
       }
     }
   }
@@ -366,6 +391,7 @@ async function fetchCompleteDatabaseState(authUser?: SessionPayload) {
     users,
     projects,
     advances,
+    borrowings,
     purchases,
     laborExpenses,
     dailyExpenses,
@@ -989,6 +1015,165 @@ app.post('/api/advances', requireAuth, requireCapability('canManageProjects'), a
     res.json({ status: 'success', advance });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed recording advance: ' + err.message });
+  }
+});
+
+// CASH FLOW BORROWINGS & FRIEND LOANS CRUD
+app.get('/api/borrowings', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const projectId = req.query.projectId as string | undefined;
+    const { borrowings } = await getBorrowingsFromDb(supabase, projectId);
+    res.json({ borrowings });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed fetching borrowings: ' + err.message });
+  }
+});
+
+app.post('/api/borrowings', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const canManage = req.roleDef?.canManageProjects || req.roleDef?.canManageRoles || req.auth?.role === UserRole.ADMIN;
+    if (!canManage) {
+      return res.status(403).json({ error: 'Forbidden: Insufficient permissions to record borrowings.' });
+    }
+
+    const borrowingData = req.body || {};
+    if (!borrowingData.projectId || !borrowingData.amount || Number(borrowingData.amount) <= 0) {
+      return res.status(400).json({ error: 'Valid site project and borrowing amount are required.' });
+    }
+
+    const isNew = !borrowingData.id;
+    const borrowing = await saveBorrowingToDb(supabase, borrowingData, req.auth!.name);
+
+    await writeAuditLog({
+      action: isNew ? 'Record Borrowing' : 'Update Borrowing',
+      tableAffected: 'project_borrowings',
+      recordId: borrowing.id,
+      previousValue: '',
+      newValue: JSON.stringify(borrowing),
+      userId: req.auth!.userId,
+      userName: req.auth!.name,
+    });
+
+    const { data: proj } = await supabase.from('projects').select('project_name').eq('id', borrowing.projectId).maybeSingle();
+    const projName = proj ? proj.project_name : 'Site Project';
+
+    if (isNew) {
+      await supabase.from('notifications').insert({
+        id: genId('notif'),
+        project_id: borrowing.projectId,
+        project_name: projName,
+        message: `🤝 CASH INJECTION: ₹${borrowing.amount.toLocaleString()} borrowed from "${borrowing.lenderName}" by ${borrowing.borrowerName} for ${borrowing.purpose || 'site liquidity'}.`,
+        type: 'borrowing_recorded',
+        date: new Date().toISOString(),
+        amount: borrowing.amount,
+        is_read_by: [],
+      });
+    }
+
+    res.json({ status: 'success', borrowing });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed saving borrowing: ' + err.message });
+  }
+});
+
+app.post('/api/borrowings/:id/repay', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const canManage = req.roleDef?.canManageProjects || req.roleDef?.canManageRoles || req.auth?.role === UserRole.ADMIN;
+    if (!canManage) {
+      return res.status(403).json({ error: 'Forbidden: Insufficient permissions to record loan repayments.' });
+    }
+
+    const { id } = req.params;
+    const repaymentData = req.body || {};
+    const amt = Number(repaymentData.amount) || 0;
+    if (amt <= 0) {
+      return res.status(400).json({ error: 'Repayment amount must be greater than zero.' });
+    }
+
+    const { borrowing, repayment } = await addRepaymentToDb(supabase, id, repaymentData, req.auth!.name);
+
+    await writeAuditLog({
+      action: 'Repay Borrowing',
+      tableAffected: 'borrowing_repayments',
+      recordId: repayment.id,
+      previousValue: '',
+      newValue: JSON.stringify({ borrowing, repayment }),
+      userId: req.auth!.userId,
+      userName: req.auth!.name,
+    });
+
+    const isSettled = borrowing.status === BorrowingStatus.SETTLED;
+    const { data: proj } = await supabase.from('projects').select('project_name').eq('id', borrowing.projectId).maybeSingle();
+    const projName = proj ? proj.project_name : 'Site Project';
+
+    await supabase.from('notifications').insert({
+      id: genId('notif'),
+      project_id: borrowing.projectId,
+      project_name: projName,
+      message: isSettled
+        ? `✅ LOAN FULLY SETTLED: ₹${amt.toLocaleString()} repaid to "${borrowing.lenderName}". Debt is 100% cleared!`
+        : `💳 PARTIAL LOAN REPAID: ₹${amt.toLocaleString()} repaid to "${borrowing.lenderName}". Remaining balance: ₹${borrowing.balanceDue.toLocaleString()}.`,
+      type: isSettled ? 'loan_settled' : 'loan_repaid',
+      date: new Date().toISOString(),
+      amount: amt,
+      is_read_by: [],
+    });
+
+    res.json({ status: 'success', borrowing, repayment });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed recording repayment: ' + err.message });
+  }
+});
+
+app.post('/api/borrowings/:id/delete', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const canManage = req.roleDef?.canManageProjects || req.roleDef?.canManageRoles || req.auth?.role === UserRole.ADMIN;
+    if (!canManage) {
+      return res.status(403).json({ error: 'Forbidden: Insufficient permissions to delete borrowings.' });
+    }
+
+    const { id } = req.params;
+    await deleteBorrowingFromDb(supabase, id);
+
+    await writeAuditLog({
+      action: 'Delete Borrowing',
+      tableAffected: 'project_borrowings',
+      recordId: id,
+      previousValue: '',
+      newValue: '',
+      userId: req.auth!.userId,
+      userName: req.auth!.name,
+    });
+
+    res.json({ status: 'success' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed deleting borrowing: ' + err.message });
+  }
+});
+
+app.post('/api/borrowings/repayments/:id/delete', requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const canManage = req.roleDef?.canManageProjects || req.roleDef?.canManageRoles || req.auth?.role === UserRole.ADMIN;
+    if (!canManage) {
+      return res.status(403).json({ error: 'Forbidden: Insufficient permissions to delete repayment.' });
+    }
+
+    const { id } = req.params;
+    const borrowing = await deleteRepaymentFromDb(supabase, id);
+
+    await writeAuditLog({
+      action: 'Delete Borrowing Repayment',
+      tableAffected: 'borrowing_repayments',
+      recordId: id,
+      previousValue: '',
+      newValue: JSON.stringify(borrowing),
+      userId: req.auth!.userId,
+      userName: req.auth!.name,
+    });
+
+    res.json({ status: 'success', borrowing });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed deleting repayment: ' + err.message });
   }
 });
 

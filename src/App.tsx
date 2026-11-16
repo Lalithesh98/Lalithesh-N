@@ -21,13 +21,16 @@ import {
   CheckCircle,
   Lock,
   Camera,
-  Menu
+  Menu,
+  HandCoins
 } from 'lucide-react';
 
 // Custom types and API helpers
 import { 
   Project, 
   Advance, 
+  BorrowingRepayment,
+  ProjectBorrowing,
   MaterialPurchase, 
   LaborExpense, 
   DailyExpense, 
@@ -46,6 +49,7 @@ import appApi, { getStoredToken, setStoredToken } from './api';
 import Dashboard from './components/Dashboard';
 import ProjectManager from './components/ProjectManager';
 import AdvanceManager from './components/AdvanceManager';
+import BorrowingsTracker from './components/BorrowingsTracker';
 import MaterialPurchaseTracker from './components/MaterialPurchaseTracker';
 import LaborExpenseTracker from './components/LaborExpenseTracker';
 import DailyExpenseTracker from './components/DailyExpenseTracker';
@@ -70,6 +74,7 @@ export default function App() {
   const [loginAccounts, setLoginAccounts] = useState<AppUser[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [advances, setAdvances] = useState<Advance[]>([]);
+  const [borrowings, setBorrowings] = useState<ProjectBorrowing[]>([]);
   const [purchases, setPurchases] = useState<MaterialPurchase[]>([]);
   const [laborExpenses, setLaborExpenses] = useState<LaborExpense[]>([]);
   const [dailyExpenses, setDailyExpenses] = useState<DailyExpense[]>([]);
@@ -222,6 +227,7 @@ export default function App() {
       setProjects(activeProjects);
 
       setAdvances(data.advances || []);
+      setBorrowings(data.borrowings || []);
       setPurchases(data.purchases || []);
       setLaborExpenses(data.laborExpenses || []);
       setDailyExpenses(data.dailyExpenses || []);
@@ -286,6 +292,42 @@ export default function App() {
       await loadDatabaseState(true);
     } catch (err: any) {
       alert(err.message || 'Disbursement failure');
+    }
+  };
+
+  const handleSaveBorrowing = async (borrowingData: Partial<ProjectBorrowing>) => {
+    try {
+      await appApi.saveBorrowing({ ...borrowingData, userId: activeUser.id, userName: activeUser.name });
+      await loadDatabaseState(true);
+    } catch (err: any) {
+      alert(err.message || 'Failed saving borrowing');
+    }
+  };
+
+  const handleRepayBorrowing = async (borrowingId: string, repaymentData: Partial<BorrowingRepayment>) => {
+    try {
+      await appApi.repayBorrowing(borrowingId, { ...repaymentData, userId: activeUser.id, userName: activeUser.name });
+      await loadDatabaseState(true);
+    } catch (err: any) {
+      alert(err.message || 'Failed recording loan repayment');
+    }
+  };
+
+  const handleDeleteBorrowing = async (borrowingId: string) => {
+    try {
+      await appApi.deleteBorrowing(borrowingId);
+      await loadDatabaseState(true);
+    } catch (err: any) {
+      alert(err.message || 'Failed deleting borrowing');
+    }
+  };
+
+  const handleDeleteBorrowingRepayment = async (repaymentId: string) => {
+    try {
+      await appApi.deleteBorrowingRepayment(repaymentId);
+      await loadDatabaseState(true);
+    } catch (err: any) {
+      alert(err.message || 'Failed deleting repayment');
     }
   };
 
@@ -403,6 +445,7 @@ export default function App() {
       case 'dashboard': return 'Dashboard Analytics';
       case 'projects': return 'Project Sites';
       case 'advances': return 'Cash Advances';
+      case 'borrowings': return 'Cash Flow & Borrowings';
       case 'materials': return 'Material Bills';
       case 'labor': return 'Labor Wages';
       case 'daily': return 'Site Vouchers';
@@ -735,6 +778,7 @@ export default function App() {
                 let icon = <TrendingUp className="w-4 h-4" />;
                 if (tab === 'projects') icon = <Building2 className="w-4 h-4" />;
                 if (tab === 'advances') icon = <Wallet className="w-4 h-4" />;
+                if (tab === 'borrowings') icon = <HandCoins className="w-4 h-4 text-amber-400" />;
                 if (tab === 'materials') icon = <FileText className="w-4 h-4" />;
                 if (tab === 'labor') icon = <Hammer className="w-4 h-4" />;
                 if (tab === 'daily') icon = <Compass className="w-4 h-4" />;
@@ -950,6 +994,7 @@ export default function App() {
                       activeProject={activeProject}
                       projects={projects}
                       advances={advances}
+                      borrowings={borrowings}
                       purchases={purchases}
                       laborExpenses={laborExpenses}
                       dailyExpenses={dailyExpenses}
@@ -984,6 +1029,23 @@ export default function App() {
                       canManage={canManageProjects}
                       currentUserName={activeUser.name}
                       onAddAdvance={handleAddAdvance}
+                    />
+                  )}
+
+                  {activeTab === 'borrowings' && (
+                    <BorrowingsTracker 
+                      activeProject={activeProject}
+                      projects={projects}
+                      users={users}
+                      borrowings={borrowings}
+                      currentUserRole={currentUserRole}
+                      canManage={canManageProjects}
+                      currentUserName={activeUser.name}
+                      onSaveBorrowing={handleSaveBorrowing}
+                      onRepayBorrowing={handleRepayBorrowing}
+                      onDeleteBorrowing={handleDeleteBorrowing}
+                      onDeleteRepayment={handleDeleteBorrowingRepayment}
+                      onPreviewReceipt={handleOpenPreviewLightbox}
                     />
                   )}
 
@@ -1030,6 +1092,7 @@ export default function App() {
                     <ExpenseReconciliation 
                       activeProject={activeProject}
                       advances={advances}
+                      borrowings={borrowings}
                       purchases={purchases}
                       laborExpenses={laborExpenses}
                       dailyExpenses={dailyExpenses}
@@ -1050,6 +1113,7 @@ export default function App() {
                       activeProject={activeProject}
                       projects={projects}
                       advances={advances}
+                      borrowings={borrowings}
                       purchases={purchases}
                       laborExpenses={laborExpenses}
                       dailyExpenses={dailyExpenses}

@@ -12,11 +12,13 @@ import {
   ArrowDownCircle,
   ArrowUpCircle
 } from 'lucide-react';
-import { Project, Advance, MaterialPurchase, LaborExpense, DailyExpense } from '../types';
+import { Project, Advance, MaterialPurchase, LaborExpense, DailyExpense, ProjectBorrowing } from '../types';
+import { HandCoins } from 'lucide-react';
 
 interface ExpenseReconciliationProps {
   activeProject: Project | null;
   advances: Advance[];
+  borrowings?: ProjectBorrowing[];
   purchases: MaterialPurchase[];
   laborExpenses: LaborExpense[];
   dailyExpenses: DailyExpense[];
@@ -25,6 +27,7 @@ interface ExpenseReconciliationProps {
 export default function ExpenseReconciliation({
   activeProject,
   advances,
+  borrowings = [],
   purchases,
   laborExpenses,
   dailyExpenses,
@@ -65,6 +68,14 @@ export default function ExpenseReconciliation({
   const totalCreditExpenses = totalMaterialCredit + totalLaborCredit + totalDailyCredit;
 
   const remainingBalance = totalAdvances - totalPaidExpenses; // Tracks actual surplus cash in Mestri hands!
+
+  // External Borrowings & Friend Loans Reconciliation
+  const projectBorrowings = borrowings.filter(b => b.projectId === pId);
+  const totalBorrowed = projectBorrowings.reduce((sum, b) => sum + b.amount, 0);
+  const totalRepaidDebt = projectBorrowings.reduce((sum, b) => sum + b.repaidAmount, 0);
+  const outstandingDebt = projectBorrowings.reduce((sum, b) => sum + b.balanceDue, 0);
+  const trueCashInHand = (totalAdvances + totalBorrowed) - (totalPaidExpenses + totalRepaidDebt);
+  const distributableProfit = totalAdvances - totalPaidExpenses - outstandingDebt;
 
   // Audit triggers
   const purchasesWithoutBills = projectPurchases.filter(p => !p.billUrl).length;
@@ -283,6 +294,89 @@ export default function ExpenseReconciliation({
             </table>
           </div>
         </div>
+      </div>
+
+      {/* External Borrowings & Friend Loans Reconciliation Ledger */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-amber-500/10 text-amber-600 rounded-xl">
+              <HandCoins className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-slate-800">External Borrowings & Friend Loans Audit</h3>
+              <p className="text-xs text-slate-400">Verifying cash borrowed to cover shortages and ensuring partner reimbursements</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`px-3 py-1 rounded-xl text-xs font-bold border ${
+              outstandingDebt > 0 ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+            }`}>
+              {outstandingDebt > 0 ? `₹${outstandingDebt.toLocaleString('en-IN')} Unsettled Debt` : 'All Friend Loans Settled'}
+            </span>
+          </div>
+        </div>
+
+        {projectBorrowings.length === 0 ? (
+          <div className="p-6 text-center text-xs text-slate-400">
+            No external borrowings or friend loans recorded for this site.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200/70 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="px-5 py-3">Lender / Friend</th>
+                  <th className="px-4 py-3">Taken By</th>
+                  <th className="px-4 py-3">Date</th>
+                  <th className="px-4 py-3 text-right">Borrowed Amount</th>
+                  <th className="px-4 py-3 text-right">Repaid Back</th>
+                  <th className="px-5 py-3 text-right">Outstanding Due</th>
+                  <th className="px-4 py-3 text-center">Audit Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {projectBorrowings.map((b) => (
+                  <tr key={b.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-5 py-3.5 font-extrabold text-slate-800">
+                      {b.lenderName}
+                      {b.lenderContact && <span className="text-slate-400 text-[10px] font-normal block">{b.lenderContact}</span>}
+                    </td>
+                    <td className="px-4 py-3.5 text-slate-600 font-semibold">{b.borrowerName}</td>
+                    <td className="px-4 py-3.5 text-slate-500">{b.date}</td>
+                    <td className="px-4 py-3.5 text-right font-bold text-slate-700">₹{b.totalDue.toLocaleString('en-IN')}</td>
+                    <td className="px-4 py-3.5 text-right font-bold text-emerald-600">₹{b.repaidAmount.toLocaleString('en-IN')}</td>
+                    <td className={`px-5 py-3.5 text-right font-black ${b.balanceDue > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                      ₹{b.balanceDue.toLocaleString('en-IN')}
+                    </td>
+                    <td className="px-4 py-3.5 text-center">
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                        b.balanceDue <= 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
+                      }`}>
+                        {b.balanceDue <= 0 ? 'SETTLED' : 'ACTIVE DEBT'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {/* Summary footer */}
+                <tr className="bg-slate-900 text-white font-black text-xs">
+                  <td colSpan={3} className="px-5 py-3 uppercase tracking-wider text-[10px] text-slate-300">
+                    Net Borrowing Liabilities
+                  </td>
+                  <td className="px-4 py-3 text-right font-extrabold text-slate-200">
+                    ₹{totalBorrowed.toLocaleString('en-IN')}
+                  </td>
+                  <td className="px-4 py-3 text-right font-extrabold text-emerald-400">
+                    ₹{totalRepaidDebt.toLocaleString('en-IN')}
+                  </td>
+                  <td colSpan={2} className="px-5 py-3 text-right font-black text-rose-350 text-sm">
+                    ₹{outstandingDebt.toLocaleString('en-IN')}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -21,13 +21,15 @@ import {
   DailyExpense, 
   MaterialCategory, 
   WorkerType, 
-  DailyExpenseCategory 
+  DailyExpenseCategory,
+  ProjectBorrowing
 } from '../types';
 
 interface ReportGeneratorProps {
   activeProject: Project | null;
   projects: Project[];
   advances: Advance[];
+  borrowings?: ProjectBorrowing[];
   purchases: MaterialPurchase[];
   laborExpenses: LaborExpense[];
   dailyExpenses: DailyExpense[];
@@ -39,6 +41,7 @@ export default function ReportGenerator({
   activeProject,
   projects,
   advances,
+  borrowings = [],
   purchases,
   laborExpenses,
   dailyExpenses,

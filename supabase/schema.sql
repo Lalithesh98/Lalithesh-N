@@ -172,6 +172,43 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   is_read_by TEXT[] NOT NULL DEFAULT '{}'
 );
 
+-- 12. Project Borrowings (External loans from friends/lenders for project cash flow)
+CREATE TABLE IF NOT EXISTS public.project_borrowings (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  lender_name TEXT NOT NULL,
+  lender_contact TEXT NOT NULL DEFAULT '',
+  borrower_name TEXT NOT NULL,
+  amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
+  interest_amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
+  total_due NUMERIC(14, 2) NOT NULL DEFAULT 0,
+  repaid_amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
+  balance_due NUMERIC(14, 2) NOT NULL DEFAULT 0,
+  purpose TEXT NOT NULL DEFAULT '',
+  due_date DATE,
+  status TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Partially Repaid', 'Settled')),
+  receipt_url TEXT NOT NULL DEFAULT '',
+  notes TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 13. Borrowing Repayments (Installments/settlements repaid back to friends)
+CREATE TABLE IF NOT EXISTS public.borrowing_repayments (
+  id TEXT PRIMARY KEY,
+  borrowing_id TEXT NOT NULL REFERENCES public.project_borrowings(id) ON DELETE CASCADE,
+  project_id TEXT NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
+  repaid_by TEXT NOT NULL,
+  payment_mode TEXT NOT NULL DEFAULT 'UPI / Bank Transfer',
+  reference_no TEXT NOT NULL DEFAULT '',
+  receipt_url TEXT NOT NULL DEFAULT '',
+  remarks TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_advances_project ON public.advances(project_id, date DESC);
 CREATE INDEX IF NOT EXISTS idx_purchases_project ON public.material_purchases(project_id, date DESC) WHERE is_deleted = FALSE;
@@ -180,6 +217,10 @@ CREATE INDEX IF NOT EXISTS idx_daily_project ON public.daily_expenses(project_id
 CREATE INDEX IF NOT EXISTS idx_stage_photos_project ON public.stage_photos(project_id, stage_key);
 CREATE INDEX IF NOT EXISTS idx_notifications_project ON public.notifications(project_id, date DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_date ON public.audit_logs(date DESC);
+CREATE INDEX IF NOT EXISTS idx_borrowings_project ON public.project_borrowings(project_id, date DESC);
+CREATE INDEX IF NOT EXISTS idx_borrowings_status ON public.project_borrowings(status);
+CREATE INDEX IF NOT EXISTS idx_repayments_borrowing ON public.borrowing_repayments(borrowing_id, date DESC);
+CREATE INDEX IF NOT EXISTS idx_repayments_project ON public.borrowing_repayments(project_id, date DESC);
 
 -- Storage bucket for receipt bills and stage progress photos
 INSERT INTO storage.buckets (id, name, public)
@@ -198,6 +239,8 @@ ALTER TABLE public.stage_photos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tax_invoices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.project_borrowings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.borrowing_repayments ENABLE ROW LEVEL SECURITY;
 
 -- Default Roles Seed
 INSERT INTO public.app_roles (id, name, description, allowed_tabs, can_write_expenses, can_manage_projects, can_manage_roles, is_system)
@@ -205,8 +248,8 @@ VALUES
   (
     'role_admin',
     'Admin',
-    'Full system control over sites, advances, expenses, role access, and user accounts.',
-    ARRAY['dashboard','projects','advances','materials','labor','daily','reconciliation','documents','reports','audit','photos'],
+    'Full system control over sites, advances, borrowings, expenses, role access, and user accounts.',
+    ARRAY['dashboard','projects','advances','borrowings','materials','labor','daily','reconciliation','documents','reports','audit','photos'],
     TRUE,
     TRUE,
     TRUE,
@@ -215,8 +258,8 @@ VALUES
   (
     'role_proprietor',
     'Proprietor',
-    'Executive oversight, financial reconciliations, reports, documents, and stage progress.',
-    ARRAY['dashboard','reconciliation','documents','reports','photos'],
+    'Executive oversight, financial reconciliations, borrowings, reports, documents, and stage progress.',
+    ARRAY['dashboard','borrowings','reconciliation','documents','reports','photos'],
     FALSE,
     FALSE,
     FALSE,
