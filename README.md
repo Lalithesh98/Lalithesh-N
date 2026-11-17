@@ -9,6 +9,7 @@ Full-stack construction site finance, operations, and progress tracking platform
 - **Material, Labor & Daily Site Expenses**: Log material purchases (with transport, extra charges, split paid/credit, and credit settlement), labor wages, and daily petty vouchers.
 - **AI Receipt Auto-Fill**: Scan uploaded bill images/PDFs using Gemini (`gemini-2.5-flash`) to auto-populate supplier, invoice number, items, quantities, and rates.
 - **Cloud Document & Stage Photo Storage**: Upload receipts and stage progress photos directly to Supabase Storage (`lv-documents`).
+- **Cash Flow Borrowings & Friend Loan Tracker**: Track project loans from friends or lenders, partial/full installment repayments, liability alerts before profit distribution, and 1-click WhatsApp statements.
 - **GST Tax Invoice Generator & Audit Logs**: Generate printable LV GST tax invoices and track immutable audit histories.
 
 ## Tech Stack
@@ -22,7 +23,7 @@ Full-stack construction site finance, operations, and progress tracking platform
    ```bash
    npm install
    ```
-2. Run [supabase/schema.sql](supabase/schema.sql) in your Supabase SQL Editor.
+2. Run [supabase/schema.sql](supabase/schema.sql) and [supabase/migration_borrowings.sql](supabase/migration_borrowings.sql) in your Supabase SQL Editor.
 3. Copy `.env.example` to `.env.local` and fill in your Supabase and Gemini credentials.
 4. Start the development server:
    ```bash
